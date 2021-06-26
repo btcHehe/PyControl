@@ -17,7 +17,7 @@ def __init():
     global _xmax
     global _ymin
     global _ymax
-    gluOrtho2D(2*_xmin, 2*_xmax, 2*_ymin, 2*_ymax)
+    gluOrtho2D(_xmin, _xmax, 2*_ymin, 2*_ymax)
 
 def __plotting():
     global _title
@@ -40,8 +40,8 @@ def __plotFunc():
     glClear(GL_COLOR_BUFFER_BIT)
     glColor3f(0.0, 0.0, 0.0)
     glBegin(GL_LINES)
-    glVertex2f(2*_xmin, 0.0)
-    glVertex2f(2*_xmax, 0.0)
+    glVertex2f(_xmin, 0.0)
+    glVertex2f(_xmax, 0.0)
     glVertex2f(0.0, 2*_ymax)
     glVertex2f(0.0, 2*_ymin)
     glEnd()
@@ -98,7 +98,7 @@ def plotMore(xvect,yvect,xlabelvect=[],ylabelvect=[],title="multiple plots"):   
 x = np.array([])
 y = np.array([])
 
-x = np.arange(-5.0, 5.0, 0.01)
+x = np.arange(-100.0, 100.0, 0.01)
 for i in range(np.size(x)):
     y = np.append(y, np.sin(x[i]))
 
