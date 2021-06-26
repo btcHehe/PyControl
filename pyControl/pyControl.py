@@ -1,54 +1,113 @@
-import sympy as sp
-import matplotlib.pyplot as plt
 import numpy as np
+import plotter as plt
 
-s = sp.symbols('s', real=False)
-t,w = sp.symbols('t w', real=True)
-j = sp.I
 
-def tf(numCoef=0,denCoef=1):    #order is: coef of highest power of s->lowest
-    num = 0
-    den = 0
-    numList = numCoef[::-1]     #small arrays, no need for numpy quickness
-    denList = denCoef[::-1]
-    if(numCoef!=0 and denCoef!=0): 
-        for i,coef in enumerate(numList):   #for this to work we need reversed order
-            num += coef*(s**i)
-            for i,coef in enumerate(denList):
-                den += coef*(s**i)
-    return num/den
-     
+# denumerator and numerator coefficients must be given in a specific order:
+#   a1*s^n + a2*s^(n-1) + a3*s^(n-2) + a4*s^(n-3) + ... =>  [a1, a2, a3, a4,...]
 
-def laplace(func):
-    sfunc = sp.integrate(func*sp.exp(-s*t),(t,0,sp.oo))
-    return sfunc
+class sys:
+    def __init__(self):
+        self.A = np.array()
+        self.B = np.array()
+        self.C = np.array()
+        self.D = np.array()
+        self.TFnumerator = np.array([])
+        self.TFdenumerator = np.array([])
 
-def invlaplace(sys):
-    tfunc = sp.inverse_laplace_transform(sys,s,t)
-    return tfunc
+    # diagonal form
+    def diag(self):
+        eigVals, eigVecs = np.linalg.eig(self.A)
+        P = np.array()  # transformation matrix
+        for eigenVector in eigVecs:
+            P = np.append(P, np.array(eigenVector).transpose(), axis=1)
+        invP = np.linalg.inv(P)
+        A = invP * self.A * P
+        B = invP * self.B
+        C = self.C * P
+        return A, B, C
 
-def step(sys,time=1):
-    stepS = 1/s
-    dt = time/1000
-    timeNow = 0
-    responseVec = np.array([])
-    timeVec = np.array([])
-    Sresponse = stepS*sys
-    response = invlaplace(Sresponse)
-    while(timeNow<time):
-        temp = response.evalf(subs={t:timeNow})
-        # print(temp)
-        # print(timeNow)
-        if(timeNow>0):
-            responseVec = np.append(responseVec,temp)
-            timeVec = np.append(timeVec,timeNow)
-        timeNow+=dt
-    fig = plt.subplot()
-    fig.plot(timeVec, responseVec)
-    fig.set_xlabel('Time [s]')
-    fig.set_ylabel('Amplitude')
-    fig.set_title("Step response")
-    return fig
-        
+    # observable canonical form of SISO system
+    # highest power of the s in denumerator must be bigger than highest power in the numerator
+    # highest power of s in denumerator must have coefficient equal 1
+    def obsv(self):
+        numRows, numCols = self.TFnumerator.shape()
+        denRows, denCols = self.TFdenumerator.shape()
+        if denCols > numCols:
+            tempArr = np.array()
+            np.append(tempArr, np.zeros(denCols - numCols))
+            np.append(tempArr, self.TFnumerator)
+            self.TFnumerator = tempArr
+        elif denCols < numCols:
+            raise Exception('denumerator must be higher order than numerator')
+        obsvA = np.array()
+        obsvB = np.array()
+        obsvC = np.array()
+        obsvA = np.append(obsvA, -1 * self.TFdenumerator.transpose(), axis=1)
+        subMat = np.identity(denCols - 1)
+        np.append(subMat, np.zeros(denCols - 1), axis=0)
+        obsvA = np.append(obsvA, subMat, axis=1)
+        obsvB = np.append(obsvB, self.TFnumerator.transpose(), axis=1)
+        obsvC = np.append(obsvC, np.array([1]), axis=1)
+        obsvC = np.append(obsvC, np.zeros(denCols - 1), axis=1)
+        return obsvA, obsvB, obsvC
 
-        
+    # controllable canonical form of SISO system
+    # highest power of the s in denumerator must be bigger than highest power in the numerator
+    # highest power of s in denumerator must have coefficient equal 1
+    def contr(self):
+        numRows, numCols = self.TFnumerator.shape()
+        denRows, denCols = self.TFdenumerator.shape()
+        if denCols > numCols:
+            tempArr = np.array()
+            np.append(tempArr, np.zeros(denCols - numCols))
+            np.append(tempArr, self.TFnumerator)
+            self.TFnumerator = tempArr
+        elif denCols < numCols:
+            raise Exception('denumerator must be higher order than numerator')
+        contA = np.array()
+        contB = np.array()
+        contC = np.array()
+        contA = np.append(contA, np.zeros(denCols - 1).transpose(), axis=1)
+        subMat = np.identity(denCols - 1)
+        np.append(contA, subMat, axis=1)
+        np.append(contA, -1 * self.TFdenumerator, axis=0)
+        contB = np.zeros(denCols - 1).transpose()
+        np.append(contB, np.array([1]), axis=0)
+        contC = np.array(self.TFnumerator)
+        return contA, contB, contC
+
+
+class ss(sys):
+    def __init__(self, A, B, C, D):
+        super().__init__()
+        self.A = np.array(A)
+        self.B = np.array(B)
+        self.C = np.array(C)
+        self.D = np.array(D)
+
+
+class tf(sys):
+    def __init__(self, num, denum):
+        super().__init__()
+        self.TFnumerator = np.array(num)
+        self.TFdenumerator = np.array(denum)
+
+
+def tfToss(system):
+    if isinstance(system, tf):
+        A, B, C = system.obsv()
+        D = np.array([0])
+        systemSS = ss(A, B, C, D)
+        return systemSS
+    else:
+        raise Exception('you need to pass tf system as the argument')
+
+
+def step(system):
+    if isinstance(system, tf):
+        systemSS = tfToss(system)
+        step(systemSS)
+    elif isinstance(system, ss):
+        pass
+    else:
+        raise Exception('argument must be an instance of tf or ss class')
