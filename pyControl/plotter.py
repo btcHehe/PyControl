@@ -1,6 +1,6 @@
-from OpenGL.GLUT import *
-from OpenGL.GL import *
-from OpenGL.GLU import *
+from PyOpenGL.GLUT import *
+from PyOpenGL.GL import *
+from PyOpenGL.GLU import *
 import numpy as np
 import sys
 

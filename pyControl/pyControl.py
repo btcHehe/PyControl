@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.integrate import odeint, solve_ivp
 import plotter as plt
 
 
@@ -13,6 +14,7 @@ class sys:
         self.D = np.array()
         self.TFnumerator = np.array([])
         self.TFdenumerator = np.array([])
+        self.startCond = np.array([])
 
     # diagonal form
     def diag(self):
@@ -30,9 +32,9 @@ class sys:
     # highest power of the s in denumerator must be bigger than highest power in the numerator
     # highest power of s in denumerator must have coefficient equal 1
     def obsv(self):
-        numRows, numCols = self.TFnumerator.shape()
-        denRows, denCols = self.TFdenumerator.shape()
-        if denCols > numCols:
+        numCols = self.TFnumerator.shape()
+        denCols = self.TFdenumerator.shape()
+        if denCols > numCols:           #making numerator and denumerator equal length filling with 0
             tempArr = np.array()
             np.append(tempArr, np.zeros(denCols - numCols))
             np.append(tempArr, self.TFnumerator)
@@ -42,22 +44,22 @@ class sys:
         obsvA = np.array()
         obsvB = np.array()
         obsvC = np.array()
-        obsvA = np.append(obsvA, -1 * self.TFdenumerator.transpose(), axis=1)
-        subMat = np.identity(denCols - 1)
-        np.append(subMat, np.zeros(denCols - 1), axis=0)
+        obsvA = np.append(obsvA, -1 * self.TFdenumerator.transpose(), axis=1)    #column of minus denumerator values
+        subMat = np.identity(denCols - 1)                               #identity matrix
+        np.append(subMat, np.zeros(denCols - 1), axis=0)                #row of 0 added to identity matrix
         obsvA = np.append(obsvA, subMat, axis=1)
-        obsvB = np.append(obsvB, self.TFnumerator.transpose(), axis=1)
+        obsvB = np.append(obsvB, self.TFnumerator.transpose(), axis=1)  #column of numerator values
         obsvC = np.append(obsvC, np.array([1]), axis=1)
-        obsvC = np.append(obsvC, np.zeros(denCols - 1), axis=1)
+        obsvC = np.append(obsvC, np.zeros(denCols - 1), axis=1)         #row of 0
         return obsvA, obsvB, obsvC
 
     # controllable canonical form of SISO system
     # highest power of the s in denumerator must be bigger than highest power in the numerator
     # highest power of s in denumerator must have coefficient equal 1
     def contr(self):
-        numRows, numCols = self.TFnumerator.shape()
-        denRows, denCols = self.TFdenumerator.shape()
-        if denCols > numCols:
+        numCols = np.shape(self.TFnumerator)
+        denCols = np.shape(self.TFdenumerator)
+        if denCols > numCols:                           #making numerator and denumerator equal length
             tempArr = np.array()
             np.append(tempArr, np.zeros(denCols - numCols))
             np.append(tempArr, self.TFnumerator)
@@ -67,23 +69,31 @@ class sys:
         contA = np.array()
         contB = np.array()
         contC = np.array()
-        contA = np.append(contA, np.zeros(denCols - 1).transpose(), axis=1)
-        subMat = np.identity(denCols - 1)
+        contA = np.append(contA, np.zeros(denCols - 1).transpose(), axis=1)     #column of 0
+        subMat = np.identity(denCols - 1)                                       #identity matrix
         np.append(contA, subMat, axis=1)
-        np.append(contA, -1 * self.TFdenumerator, axis=0)
-        contB = np.zeros(denCols - 1).transpose()
+        np.append(contA, -1 * self.TFdenumerator, axis=0)                       #row of minus denumerator values
+        contB = np.zeros(denCols - 1).transpose()                               #column of 0
         np.append(contB, np.array([1]), axis=0)
-        contC = np.array(self.TFnumerator)
+        contC = np.array(self.TFnumerator)                                      #row of numerator values
         return contA, contB, contC
 
 
 class ss(sys):
-    def __init__(self, A, B, C, D):
+    def __init__(self, A, B, C, D, stCond=None):
         super().__init__()
+        if stCond is None:
+            stCond = []
         self.A = np.array(A)
         self.B = np.array(B)
         self.C = np.array(C)
         self.D = np.array(D)
+        if np.size(np.array(stCond)) < np.size(A, axis=0):          #if starting conditions vector is too short
+            self.startCond = np.array(stCond)
+            for i in range(np.size(A, axis=0) - np.size(self.startCond)):
+                np.append(self.startCond, np.array([0]))
+        else:
+            raise Exception('number of starting conditions must be equal to the order of the system')
 
 
 class tf(sys):
