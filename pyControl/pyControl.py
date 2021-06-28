@@ -20,13 +20,13 @@ class sys:
     # diagonal form
     def diag(self):  # TODO fix this
         eigVals, eigVecs = np.linalg.eig(self.A)
-        P = np.empty((np.size(eigVecs[:, 0]), 0))  # transformation matrix
+        P = np.empty((np.size(eigVals), 0))  # transformation matrix
         for eigenVector in eigVecs:
             P = np.column_stack((P, eigenVector))
         invP = np.linalg.inv(P)
-        A = invP * self.A * P
-        B = invP * self.B
-        C = self.C * P
+        A = np.matmul(invP, np.matmul(self.A, P))
+        B = np.matmul(invP, self.B)
+        C = np.matmul(self.C, P)
         return A, B, C
 
     # observable canonical form of SISO system
