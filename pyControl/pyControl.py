@@ -33,15 +33,17 @@ class sys:
     # highest power of the s in denumerator must be bigger than highest power in the numerator
     # highest power of s in denumerator must have coefficient equal 1
     def obsv(self):
+        if(self.TFdenumerator[0][0] == 1):
+            self.TFdenumerator = self.TFdenumerator[0][1:]
         numCols = np.size(self.TFnumerator)
-        denCols = np.size(self.TFdenumerator)
+        denCols = np.size(self.TFdenumerator) 
         if denCols > numCols:  # making numerator and denumerator equal length filling with 0
             tempArr = np.zeros(denCols)
             tempArr[denCols - numCols:] = self.TFnumerator
             self.TFnumerator = tempArr
         elif denCols < numCols:
             raise Exception('denumerator must be higher order than numerator')
-        obsvA = -1 * self.TFdenumerator.transpose()  # column of minus denumerator values
+        obsvA = np.array([-1 * self.TFdenumerator]).transpose() # column of minus denumerator values
         subMat = np.identity(denCols - 1)  # identity matrix
         subMat = np.vstack((subMat, np.zeros(denCols - 1)))  # row of 0 added to identity matrix
         obsvA = np.append(obsvA, subMat, axis=1)
@@ -96,8 +98,13 @@ class tf(sys):
         self.TFdenumerator = np.array([denum])
 
 
-def tfToss(system):
+def tf2ss(system):  #returns ss system in a observable canonical form based on given tf
     if isinstance(system, tf):
+        if(system.TFdenumerator[0][0] != 1):
+            system.TFnumerator = systemTFnumerator / system.TFdenumerator[0][0]   #keeping the coefficient of the highest s (s^n) equal to 1
+            system.TFdenumerator = system.TFdenumerator / system.TFnumerator[0][0]
+        
+        #system.TFdenumerator = np.delete(system.TFdenumerator, 0, 0)
         A, B, C = system.obsv()
         D = np.array([0])
         systemSS = ss(A, B, C, D)
@@ -105,12 +112,21 @@ def tfToss(system):
     else:
         raise Exception('you need to pass tf system as the argument')
 
+def poles(system):
+    roots = np.array()
+    if isinstance(system, tf):
+        roots = np.roots(system.TFdenumerator)
+    elif isinstance(system, ss):
+        roots = np.linalg.eig(system.A)
+    else:
+        raise Exception('argument must be tf or ss system')
+    return roots
 
 def step(system):
     if isinstance(system, tf):
-        systemSS = tfToss(system)
+        systemSS = tf2ss(system)
         step(systemSS)
     elif isinstance(system, ss):
         pass
     else:
-        raise Exception('argument must be an instance of tf or ss class')
+        raise Exception('argument must be a tf or ss system')
