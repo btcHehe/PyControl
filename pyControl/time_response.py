@@ -36,6 +36,10 @@ def __setupArrs(system, U, initX = 0, time = 5, h = 0.001, to = 0):
 #calculating time domain response and state trajectory of LTI system using Explicit (Forward) Euler method [time in seconds]
 def solveEE(system, U, initX = 0, time = 5, h = 0.001, to = 0):
     A,B,C,D,X,Y,T,N,t = __setupArrs(system, U, initX, time, h, to)
+    Udlt = False
+    if U == 'delta':
+        U = 1
+        Udlt = True
     for i in range(N):
         t += h
         Xprev = X[:,[i]]                                                    #ith column of X
@@ -44,7 +48,9 @@ def solveEE(system, U, initX = 0, time = 5, h = 0.001, to = 0):
         Ytemp = np.dot(C, Xnext)
         Y = np.append(Y, Ytemp)
         T = np.append(T, t)
-    
+        if Udlt:
+            U = 0
+            Udlt = False
     return (Y,T,X)
 
 
@@ -52,6 +58,10 @@ def solveEE(system, U, initX = 0, time = 5, h = 0.001, to = 0):
 #calculating time domain response and state trajectory of LTI system using Implicit (Backward) Euler method
 def solveIE(system, U, initX = 0, time = 5, h = 0.001, to = 0):
     A,B,C,D,X,Y,T,N,t = __setupArrs(system, U, initX, time, h, to)
+    Udlt = False
+    if U == 'delta':
+        U = 1
+        Udlt = True
     for i in range(N):
         t += h
         Xprev = X[:,[i]]
@@ -61,13 +71,19 @@ def solveIE(system, U, initX = 0, time = 5, h = 0.001, to = 0):
         Ytemp = np.dot(C, Xnext)
         Y = np.append(Y, Ytemp)
         T = np.append(T, t)
-    
+        if Udlt:
+            U = 0
+            Udlt = False
     return (Y,T,X)
 
 
 #calculating time domain response and state trajectory of LTI system using Trapezoidal method
 def solveTrap(system, U, initX = 0, time = 5, h = 0.001, to = 0):
     A,B,C,D,X,Y,T,N,t = __setupArrs(system, U, initX, time, h, to)
+    Udlt = False
+    if U == 'delta':
+        U = 1
+        Udlt = True
     for i in range(N):
         t += h
         Xprev = X[:,[i]]
@@ -78,7 +94,9 @@ def solveTrap(system, U, initX = 0, time = 5, h = 0.001, to = 0):
         Ytemp = np.dot(C, Xnext)
         Y = np.append(Y, Ytemp)
         T = np.append(T, t)
-
+        if Udlt:
+            U = 0
+            Udlt = False
     return (Y,T,X)
 
 
@@ -87,6 +105,10 @@ def solveTrap(system, U, initX = 0, time = 5, h = 0.001, to = 0):
 def solveRK4(system, U, initX = 0, time = 5, h = 0.001, to = 0):
     A,B,C,D,X,Y,T,N,t = __setupArrs(system, U, initX, time, h, to)
     k1 = k2 = k3 = k4 = np.array([])
+    Udlt = False
+    if U == 'delta':
+        U = 1
+        Udlt = True
     for i in range(N):
         t += h
         Xprev = X[:,[i]]
@@ -100,7 +122,9 @@ def solveRK4(system, U, initX = 0, time = 5, h = 0.001, to = 0):
         Ytemp = np.dot(C, Xnext)
         Y = np.append(Y, Ytemp)
         T = np.append(T, t)
-
+        if Udlt:
+            U = 0
+            Udlt = False
     return (Y,T,X)
 
 

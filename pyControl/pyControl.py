@@ -3,6 +3,15 @@ import matplotlib.pyplot as plt
 import time_response as Tresp
 from math import log
 
+#TODO:
+#-root locus func
+#-nyquist plots
+#-function for model recognition
+#-ss2tf
+#-impulse response
+#-controlability and observability
+#-L and K matrices
+
 # denumerator and numerator coefficients must be given in a specific order:
 #   numerator: a1*s^n + a2*s^(n-1) + a3*s^(n-2) + a4*s^(n-3) + ... + an =>  [a1, a2, a3, a4, ..., an]
 #   denumerator: s^n + b1*s^(n-1) + b2*s^(n-2) + b3*s^(n-3) + ... + bn => [b1, b2, b3, ..., bn]
@@ -141,18 +150,39 @@ def zeros(system):
     return roots
 
 
-
-#returns stateTrajectory matrix for system
-def stateTrajectory(system):
-    Y = T = X = np.array([])
+#draws phase portrait on phase plane of min 2nd order system, var1 and var2 describes which state variables need to be plot:
+# 0 - x1
+# 1 - x2 etc.
+def phasePortrait(system, var1=0, var2=1, plot=False, Xinit=[1,3,5,7]):
     if isinstance(system, tf):
         systemSS = tf2ss(system)
-        stateTrajectory(systemSS)
+        phasePlot(systemSS, var1, var2)
     elif isinstance(system, ss):
-        Y,T,X = Tresp.solveTrap(system, 1)
-        return X
-    else:
-        raise Exception('argument must be a tf or ss system')
+        if np.shape(system.A)[0] >= 2:
+            Xinit = np.array(Xinit)
+            Y = T = Xtmp = X = np.array([[]])
+            for i in range(len(Xinit)):
+                Y,T,Xtmp = Tresp.solveTrap(system, 0, Xinit[i])
+                if i == 0:
+                    X = Xtmp
+                else:
+                    X = np.vstack((X,Xtmp))     #adding rows to state trajectory matrix
+            stateNum = np.shape(system.A)[0]
+            XrowsNum = np.shape(X)[0]
+            if stateNum >= var1 or stateNum >= var2:
+                fig = plt.figure()
+                ax = fig.add_subplot()
+                plt.grid(linestyle='--')
+                for k in range(0,XrowsNum,stateNum):
+                        ax.plot(X[k+var1], X[k+var2])
+                ax.set_ylabel(f'x{var1+1}(t)')
+                ax.set_xlabel(f'x{var2+1}(t)')
+                ax.set_title('Phase portrait')
+                plt.show()
+            else:
+                raise Exception("system doesn't have that many state variables. Lower var1 or var2")
+        else:
+            raise Exception('system needs to be at least 2nd order')
 
 
 #takes system and returns tuple of vectors (Y,T,X) - response and time vectors and state trajectory matrix
@@ -186,29 +216,38 @@ def step(system, plot = False, solver = 'trap'):
         raise Exception('argument must be a tf or ss system')
 
 
-#draws phase plot on phase plane of min 2nd order system, var1 and var2 describes which state variables need to be plot:
-# 0 - x1
-# 1 - x2 etc.
-def phasePlot(system, var1=0, var2=1):
+#takes system and returns tuple of vectors (Y,T) - response and time vectors
+def pulse(system, plot = False, solver = 'trap'):
+    Y = T = X = np.array([])
     if isinstance(system, tf):
         systemSS = tf2ss(system)
-        phasePlot(systemSS, var1, var2)
+        step(systemSS)
     elif isinstance(system, ss):
-        if np.shape(system.A)[0] >= 2:
-            Y = T = X = np.array([])
-            Y,T,X = Tresp.solveTrap(system, 1)
+        if solver == 'ee':             #explicit (forward) Euler
+            Y,T,X = Tresp.solveEE(system, 'delta')
+        elif solver == 'ie':           #implicit (backward) Euler
+            Y,T,X = Tresp.solveIE(system, 'delta')
+        elif solver == 'trap':         #trapezoidal
+            Y,T,X = Tresp.solveTrap(system, 'delta')
+        elif solver == 'rk4':
+            Y,T,X = Tresp.solveRK4(system, 'delta')
+        else:
+            raise Exception('wrong solver chosen, choose: ee, ie, trap or rk4')
+        if plot:
             fig = plt.figure()
             ax = fig.add_subplot()
-            ax.plot(X[var1], X[var2])
-            ax.set_title('Phase plot')
-            ax.set_ylabel(f'x{var1+1}(t)')
-            ax.set_xlabel(f'x{var2+1}(t)')
+            ax.plot(T,Y)
+            ax.set_title('Impulse response')
+            ax.set_ylabel('y(t)')
+            ax.set_xlabel('t [s]')
             plt.show()
         else:
-            raise Exception('system needs to be at least 2nd order')
+            return (Y,T,X)
+    else:
+        raise Exception('argument must be a tf or ss system')
 
 
-#TODO:
+
 #python's pow() function couldn't handle complex numbers and was trying to cast it into something else
 def __imagPow(base, power):
     res = 1
@@ -235,11 +274,6 @@ def __sinTF(system):
         __sinTF(systemTF)
 
 
-
-#draws nyquist plot of system
-def nyquist(system):
-    pass
-
 #draws bode diagrams for system
 def bode(system):
     n,d = __sinTF(system)
@@ -259,6 +293,7 @@ def bode(system):
         Gvec = np.append(Gvec, G)
         Phvec = np.append(Phvec, Ph)
     fig,ax = plt.subplots(2)
+    plt.grid(linestyle='--')
     ax[0].set_title('Bode diagrams')
     ax[0].set_ylabel('Magnitude [dB]')
     ax[0].set_xlabel('ω [rad/s]')
@@ -269,5 +304,36 @@ def bode(system):
     ax[0].plot(Wvec, Gvec)
     ax[1].plot(Wvec, Phvec)
     plt.show()
+
+
+#draws nyquist plot of system
+#FIXME weird plots (a bit different to matlab/octave)
+def nyquist(system):
+    n,d = __sinTF(system)
+    num = den = 0
+    Pvec = np.array([])
+    Qvec = np.array([])
+    Wvec = np.array([])
+    for w in np.linspace(0.1,1000,40000):
+        for i in range(len(n)):
+           num += n[i]*pow(w,len(n)-i) 
+        for k in range(len(d)):
+           den += d[k]*pow(w,len(d)-k)
+        P = abs(num/den)
+        Q = (num/den).imag
+        Wvec = np.append(Wvec, w)
+        Pvec = np.append(Pvec, P)
+        Qvec = np.append(Qvec, Q)
+    fig = plt.figure()
+    plt.grid(linestyle='--')
+    ax = fig.add_subplot()
+    ax.set_title('Nyquist plot G(jω) = P(ω) + jQ(ω)')
+    ax.set_ylabel('Q(ω)')
+    ax.set_xlabel('P(ω)')
+    ax.plot(Pvec, Qvec)
+    ax.plot(Pvec, -1*Qvec)
+    plt.show()
+    
+
 
 
