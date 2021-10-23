@@ -1,11 +1,11 @@
 import numpy as np
-from scipy.integrate import odeint, solve_ivp
-import plotter as plt
-
+import matplotlib.pyplot as plt
+import time_response as Tresp
+from math import log
 
 # denumerator and numerator coefficients must be given in a specific order:
-#   numerator: a1*s^n + a2*s^(n-1) + a3*s^(n-2) + a4*s^(n-3) + ... =>  [a1, a2, a3, a4,...]
-#   denumerator: s^n + a1*s^(n-1) + a2*s^(n-2) + a3*s^(n-3) + ... => [a1, a2, a3, ...]
+#   numerator: a1*s^n + a2*s^(n-1) + a3*s^(n-2) + a4*s^(n-3) + ... + an =>  [a1, a2, a3, a4, ..., an]
+#   denumerator: s^n + b1*s^(n-1) + b2*s^(n-2) + b3*s^(n-3) + ... + bn => [b1, b2, b3, ..., bn]
 
 class sys:
     def __init__(self):
@@ -80,7 +80,8 @@ class ss(sys):
         if stCond is None:
             stCond = []
         self.A = np.array(A)
-        self.B = np.array(B)
+        tempB = np.array(B)
+        self.B = np.reshape(tempB, (np.shape(tempB)[0],1))
         self.C = np.array(C)
         self.D = np.array(D)
         if np.size(np.array(stCond)) < np.size(A, axis=0):  # if starting conditions vector is too short
@@ -94,17 +95,16 @@ class ss(sys):
 class tf(sys):
     def __init__(self, num, denum):
         super().__init__()
-        self.TFnumerator = np.array([num])
-        self.TFdenumerator = np.array([denum])
+        self.TFnumerator = np.array(num)
+        self.TFdenumerator = np.array(denum)
 
 
-def tf2ss(system):  #returns ss system in a observable canonical form based on given tf
+#returns ss system in a observable canonical form based on given tf
+def tf2ss(system):
     if isinstance(system, tf):
         if(system.TFdenumerator[0][0] != 1):
-            system.TFnumerator = systemTFnumerator / system.TFdenumerator[0][0]   #keeping the coefficient of the highest s (s^n) equal to 1
+            system.TFnumerator = system.TFnumerator / system.TFdenumerator[0][0]   #keeping the coefficient of the highest s (s^n) equal to 1
             system.TFdenumerator = system.TFdenumerator / system.TFnumerator[0][0]
-        
-        #system.TFdenumerator = np.delete(system.TFdenumerator, 0, 0)
         A, B, C = system.obsv()
         D = np.array([0])
         systemSS = ss(A, B, C, D)
@@ -112,21 +112,162 @@ def tf2ss(system):  #returns ss system in a observable canonical form based on g
     else:
         raise Exception('you need to pass tf system as the argument')
 
+def ss2tf(system):
+    if isinstance(system, ss):
+        pass
+    else:
+        raise Exception('you need to pass ss system as the argument')
+
+
+#returns array of poles of system
 def poles(system):
-    roots = np.array()
+    roots = np.array([])
     if isinstance(system, tf):
         roots = np.roots(system.TFdenumerator)
     elif isinstance(system, ss):
-        roots = np.linalg.eig(system.A)
+        roots, eigvecs = np.linalg.eig(system.A)
     else:
         raise Exception('argument must be tf or ss system')
     return roots
 
-def step(system):
+#returns array of zeros of system
+def zeros(system):
+    if isinstance(system, tf):
+        roots = np.roots(system.TFnumerator)
+    elif isinstance(system, ss):
+        roots, eigvecs = np.linalg.eig(system.A)
+    else:
+        raise Exception('argument must be tf or ss system')
+    return roots
+
+
+
+#returns stateTrajectory matrix for system
+def stateTrajectory(system):
+    Y = T = X = np.array([])
+    if isinstance(system, tf):
+        systemSS = tf2ss(system)
+        stateTrajectory(systemSS)
+    elif isinstance(system, ss):
+        Y,T,X = Tresp.solveTrap(system, 1)
+        return X
+    else:
+        raise Exception('argument must be a tf or ss system')
+
+
+#takes system and returns tuple of vectors (Y,T,X) - response and time vectors and state trajectory matrix
+def step(system, plot = False, solver = 'trap'):
+    Y = T = X = np.array([])
     if isinstance(system, tf):
         systemSS = tf2ss(system)
         step(systemSS)
     elif isinstance(system, ss):
-        pass
+        if solver == 'ee':             #explicit (forward) Euler
+            Y,T,X = Tresp.solveEE(system, 1)
+        elif solver == 'ie':           #implicit (backward) Euler
+            Y,T,X = Tresp.solveIE(system, 1)
+        elif solver == 'trap':         #trapezoidal
+            Y,T,X = Tresp.solveTrap(system, 1)
+        elif solver == 'rk4':
+            Y,T,X = Tresp.solveRK4(system, 1)
+        else:
+            raise Exception('wrong solver chosen, choose: ee, ie, trap or rk4')
+        if plot:
+            fig = plt.figure()
+            ax = fig.add_subplot()
+            ax.plot(T,Y)
+            ax.set_title('Step response')
+            ax.set_ylabel('y(t)')
+            ax.set_xlabel('t [s]')
+            plt.show()
+        else:
+            return (Y,T,X)
     else:
         raise Exception('argument must be a tf or ss system')
+
+
+#draws phase plot on phase plane of min 2nd order system, var1 and var2 describes which state variables need to be plot:
+# 0 - x1
+# 1 - x2 etc.
+def phasePlot(system, var1=0, var2=1):
+    if isinstance(system, tf):
+        systemSS = tf2ss(system)
+        phasePlot(systemSS, var1, var2)
+    elif isinstance(system, ss):
+        if np.shape(system.A)[0] >= 2:
+            Y = T = X = np.array([])
+            Y,T,X = Tresp.solveTrap(system, 1)
+            fig = plt.figure()
+            ax = fig.add_subplot()
+            ax.plot(X[var1], X[var2])
+            ax.set_title('Phase plot')
+            ax.set_ylabel(f'x{var1+1}(t)')
+            ax.set_xlabel(f'x{var2+1}(t)')
+            plt.show()
+        else:
+            raise Exception('system needs to be at least 2nd order')
+
+
+#TODO:
+#python's pow() function couldn't handle complex numbers and was trying to cast it into something else
+def __imagPow(base, power):
+    res = 1
+    for i in range(power-1):
+        res *= base
+    return res
+
+#creates sinusodial transfer function G(jw)
+def __sinTF(system):
+    num = []
+    den = []
+    if isinstance(system, tf):
+        for i in range(len(system.TFnumerator)):
+            num.append(complex(system.TFnumerator[i], 0))
+        for i in range(len(system.TFdenumerator)):
+            den.append(complex(system.TFdenumerator[i], 0))
+        for i in range(len(num)):
+            num[i] = num[i]*__imagPow(1j, len(num)-i)
+        for k in range(len(den)):
+            den[k] = den[k]*__imagPow(1j, len(den)-k)
+        return (num, den)
+    elif isinstance(system, ss):
+        systemTF = ss2tf(system)
+        __sinTF(systemTF)
+
+
+
+#draws nyquist plot of system
+def nyquist(system):
+    pass
+
+#draws bode diagrams for system
+def bode(system):
+    n,d = __sinTF(system)
+    num = den = 0
+    Gvec = np.array([])
+    Phvec = np.array([])
+    Wvec = np.array([])
+    #calculating the amplitude and phase characteristics
+    for w in np.linspace(0.1,1000,20000):
+        for i in range(len(n)):
+           num += n[i]*pow(w,len(n)-i) 
+        for k in range(len(d)):
+           den += d[k]*pow(w,len(d)-k)
+        G = 20*log(abs(num/den))
+        Ph = np.angle((num/den), deg=True)
+        Wvec = np.append(Wvec, w)
+        Gvec = np.append(Gvec, G)
+        Phvec = np.append(Phvec, Ph)
+    fig,ax = plt.subplots(2)
+    ax[0].set_title('Bode diagrams')
+    ax[0].set_ylabel('Magnitude [dB]')
+    ax[0].set_xlabel('ω [rad/s]')
+    ax[0].set_xscale('log')
+    ax[1].set_ylabel('Phase shift [°]')
+    ax[1].set_xlabel('ω [rad/s]')
+    ax[1].set_xscale('log')
+    ax[0].plot(Wvec, Gvec)
+    ax[1].plot(Wvec, Phvec)
+    plt.show()
+
+
