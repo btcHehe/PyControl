@@ -1,2 +1,4 @@
 /pyControl/test.py
-/.vim/*
+/venv
+/.vim
+/.idea
