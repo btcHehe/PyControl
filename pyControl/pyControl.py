@@ -8,13 +8,12 @@ from math import log
 #-nyquist plots
 #-function for model recognition
 #-ss2tf
-#-impulse response
 #-controlability and observability
 #-L and K matrices
 
-# denumerator and numerator coefficients must be given in a specific order:
+# denominator and numerator coefficients must be given in a specific order:
 #   numerator: a1*s^n + a2*s^(n-1) + a3*s^(n-2) + a4*s^(n-3) + ... + an =>  [a1, a2, a3, a4, ..., an]
-#   denumerator: s^n + b1*s^(n-1) + b2*s^(n-2) + b3*s^(n-3) + ... + bn => [b1, b2, b3, ..., bn]
+#   denominator: s^n + b1*s^(n-1) + b2*s^(n-2) + b3*s^(n-3) + ... + bn => [b1, b2, b3, ..., bn]
 
 class sys:
     def __init__(self):
@@ -23,7 +22,7 @@ class sys:
         self.C = np.array([])
         self.D = np.array([])
         self.TFnumerator = np.array([])
-        self.TFdenumerator = np.array([])
+        self.TFdenominator = np.array([])
         self.startCond = np.array([])
 
     # diagonal form
@@ -39,20 +38,20 @@ class sys:
         return A, B, C
 
     # observable canonical form of SISO system
-    # highest power of the s in denumerator must be bigger than highest power in the numerator
-    # highest power of s in denumerator must have coefficient equal 1
+    # highest power of the s in denominator must be bigger than highest power in the numerator
+    # highest power of s in denominator must have coefficient equal 1
     def obsv(self):
-        if(self.TFdenumerator[0][0] == 1):
-            self.TFdenumerator = self.TFdenumerator[0][1:]
+        if(self.TFdenominator[0][0] == 1):
+            self.TFdenominator = self.TFdenumerator[0][1:]
         numCols = np.size(self.TFnumerator)
-        denCols = np.size(self.TFdenumerator) 
-        if denCols > numCols:  # making numerator and denumerator equal length filling with 0
+        denCols = np.size(self.TFdenominator) 
+        if denCols > numCols:  # making numerator and denominator equal length filling with 0
             tempArr = np.zeros(denCols)
             tempArr[denCols - numCols:] = self.TFnumerator
             self.TFnumerator = tempArr
         elif denCols < numCols:
-            raise Exception('denumerator must be higher order than numerator')
-        obsvA = np.array([-1 * self.TFdenumerator]).transpose() # column of minus denumerator values
+            raise Exception('denominator must be higher order than numerator')
+        obsvA = np.array([-1 * self.TFdenominator]).transpose() # column of minus denumerator values
         subMat = np.identity(denCols - 1)  # identity matrix
         subMat = np.vstack((subMat, np.zeros(denCols - 1)))  # row of 0 added to identity matrix
         obsvA = np.append(obsvA, subMat, axis=1)
@@ -62,21 +61,21 @@ class sys:
         return obsvA, obsvB, obsvC
 
     # controllable canonical form of SISO system
-    # highest power of the s in denumerator must be bigger than highest power in the numerator
-    # highest power of s in denumerator must have coefficient equal 1
+    # highest power of the s in denominator must be bigger than highest power in the numerator
+    # highest power of s in denominator must have coefficient equal 1
     def contr(self):
         numCols = np.size(self.TFnumerator)
-        denCols = np.size(self.TFdenumerator)
-        if denCols > numCols:  # making numerator and denumerator equal length filling with 0
+        denCols = np.size(self.TFdenominator)
+        if denCols > numCols:  # making numerator and denominator equal length filling with 0
             tempArr = np.zeros(denCols)
             tempArr[denCols - numCols:] = self.TFnumerator
             self.TFnumerator = tempArr
         elif denCols < numCols:
-            raise Exception('denumerator must be higher order than numerator')
+            raise Exception('denominator must be higher order than numerator')
         contA = np.zeros(denCols - 1)[..., None]  # column of 0
         subMat = np.identity(denCols - 1)  # identity matrix
         contA = np.append(contA, subMat, axis=1)
-        contA = np.append(contA, -1 * self.TFdenumerator, axis=0)  # row of minus denumerator values
+        contA = np.append(contA, -1 * self.TFdenominator, axis=0)  # row of minus denumerator values
         contB = np.zeros(denCols - 1)[..., None]  # column of 0
         contB = np.vstack((contB, np.array([1])))
         contC = np.array(self.TFnumerator)  # row of numerator values
@@ -100,20 +99,56 @@ class ss(sys):
         else:
             raise Exception('number of starting conditions must be equal to the order of the system')
 
+    def __str__(self):
+        strA = str(self.A)
+        strB = str(self.B)
+        strC = str(self.C)
+        strD = str(self.D)
+        strRes = 'A = ' + strA +'\n' + 'B = ' + strB +'\n' + 'C = ' + strC +'\n' + 'D = ' + strD + '\n'
+        return strRes
+
 
 class tf(sys):
     def __init__(self, num, denum):
         super().__init__()
         self.TFnumerator = np.array(num)
-        self.TFdenumerator = np.array(denum)
+        self.TFdenominator = np.array(denum)
+
+    def __str__(self):
+        numerator = ''
+        denominator = ''
+        line = ''
+        strRes = ''
+        for n,num in enumerate(self.TFnumerator):
+            if n == np.size(self.TFnumerator)-1:
+                numerator += ' + ' + str(num)
+            else:
+                if n == 0:
+                    pass
+                else:
+                    numerator += ' + '
+                numerator += str(num) + f's^{np.size(self.TFnumerator)-n-1}'
+        denominator += f's^{np.size(self.TFdenominator)}'
+        for n,num in enumerate(self.TFdenominator):
+            if n == np.size(self.TFdenominator)-1:
+                denominator += ' + ' + str(num)
+            else:
+                denominator += ' + ' + str(num) + f's^{np.size(self.TFdenominator)-n-1}'
+
+        largestLength = max(len(numerator), len(denominator))
+        for i in range(largestLength):
+            line += '-'
+        line += '--\n'
+        strRes += numerator + '\n' + line + denominator + '\n'
+        return strRes
 
 
 #returns ss system in a observable canonical form based on given tf
 def tf2ss(system):
     if isinstance(system, tf):
-        if(system.TFdenumerator[0][0] != 1):
-            system.TFnumerator = system.TFnumerator / system.TFdenumerator[0][0]   #keeping the coefficient of the highest s (s^n) equal to 1
-            system.TFdenumerator = system.TFdenumerator / system.TFnumerator[0][0]
+        if(system.TFdenominator[0][0] != 1):
+            system.TFnumerator = system.TFnumerator / system.TFdenominator[0][0]   #keeping the coefficient of the highest s (s^n) equal to 1
+            system.TFdenominator = system.TFdenumerator / system.TFnumerator[0][0]
         A, B, C = system.obsv()
         D = np.array([0])
         systemSS = ss(A, B, C, D)
@@ -132,7 +167,7 @@ def ss2tf(system):
 def poles(system):
     roots = np.array([])
     if isinstance(system, tf):
-        roots = np.roots(system.TFdenumerator)
+        roots = np.roots(system.TFdenominator)
     elif isinstance(system, ss):
         roots, eigvecs = np.linalg.eig(system.A)
     else:
@@ -186,7 +221,7 @@ def phasePortrait(system, var1=0, var2=1, plot=False, Xinit=[1,3,5,7]):
 
 
 #takes system and returns tuple of vectors (Y,T,X) - response and time vectors and state trajectory matrix
-def step(system, plot = False, solver = 'trap'):
+def step(system, Tpts=None, plot = False, solver = 'trap'):
     Y = T = X = np.array([])
     if isinstance(system, tf):
         systemSS = tf2ss(system)
@@ -202,6 +237,10 @@ def step(system, plot = False, solver = 'trap'):
             Y,T,X = Tresp.solveRK4(system, 1)
         else:
             raise Exception('wrong solver chosen, choose: ee, ie, trap or rk4')
+        if Tpts != None:
+            Yi = np.interp(Tpts, T, Y)
+            Y = Yi
+            T = Tpts
         if plot:
             fig = plt.figure()
             ax = fig.add_subplot()
@@ -262,8 +301,8 @@ def __sinTF(system):
     if isinstance(system, tf):
         for i in range(len(system.TFnumerator)):
             num.append(complex(system.TFnumerator[i], 0))
-        for i in range(len(system.TFdenumerator)):
-            den.append(complex(system.TFdenumerator[i], 0))
+        for i in range(len(system.TFdenominator)):
+            den.append(complex(system.TFdenominator[i], 0))
         for i in range(len(num)):
             num[i] = num[i]*__imagPow(1j, len(num)-i)
         for k in range(len(den)):
@@ -335,5 +374,21 @@ def nyquist(system):
     plt.show()
     
 
+def rlocus(system,CLtf=tf([1],[1])):
+    if isinstance(system, tf):
+        k = 0
+        OLpoles = np.roots(system.TFdenominator)
+        OLzeros = np.roots(system.TFnumerator)
+        temp1 = np.polynomial.polynomial.polymul(CLtf.TFdenominator,system.TFdenominator)
+        temp2 = np.polynomial.polynomial.polymul(CLtf.TFnumerator,system.TFnumerator)
+        CLdenominator = np.polynomial.polynomial.polyadd(temp1,temp2)
+        CLnumerator = np.polynomial.polynomial.polymul(CLtf.TFdenominator,system.TFnumerator)
+        CLpoles = np.roots(CLdenominator)
+        CLzeros = np.roots(CLnumerator)
+#continue
 
+    elif isinstance(system, ss):
+        pass
+    else:
+        pass
 
