@@ -1,19 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import time_response as Tresp
+import time_response as tresp
 from math import log
 
-#TODO:
-#-root locus func
-#-nyquist plots
-#-function for model recognition
-#-ss2tf
-#-controlability and observability
-#-L and K matrices
+
+# TODO:
+# -root locus func
+# -nyquist plots
+# -function for model recognition
+# -ss2tf
+# -controlability and observability
+# -L and K matrices
 
 # denominator and numerator coefficients must be given in a specific order:
 #   numerator: a1*s^n + a2*s^(n-1) + a3*s^(n-2) + a4*s^(n-3) + ... + an =>  [a1, a2, a3, a4, ..., an]
 #   denominator: s^n + b1*s^(n-1) + b2*s^(n-2) + b3*s^(n-3) + ... + bn => [b1, b2, b3, ..., bn]
+
 
 class sys:
     def __init__(self):
@@ -41,17 +43,17 @@ class sys:
     # highest power of the s in denominator must be bigger than highest power in the numerator
     # highest power of s in denominator must have coefficient equal 1
     def obsv(self):
-        if(self.TFdenominator[0][0] == 1):
-            self.TFdenominator = self.TFdenumerator[0][1:]
+        if self.TFdenominator[0][0] == 1:
+            self.TFdenominator = self.TFdenominator[0][1:]
         numCols = np.size(self.TFnumerator)
-        denCols = np.size(self.TFdenominator) 
+        denCols = np.size(self.TFdenominator)
         if denCols > numCols:  # making numerator and denominator equal length filling with 0
             tempArr = np.zeros(denCols)
             tempArr[denCols - numCols:] = self.TFnumerator
             self.TFnumerator = tempArr
         elif denCols < numCols:
             raise Exception('denominator must be higher order than numerator')
-        obsvA = np.array([-1 * self.TFdenominator]).transpose() # column of minus denumerator values
+        obsvA = np.array([-1 * self.TFdenominator]).transpose()  # column of minus denumerator values
         subMat = np.identity(denCols - 1)  # identity matrix
         subMat = np.vstack((subMat, np.zeros(denCols - 1)))  # row of 0 added to identity matrix
         obsvA = np.append(obsvA, subMat, axis=1)
@@ -89,7 +91,7 @@ class ss(sys):
             stCond = []
         self.A = np.array(A)
         tempB = np.array(B)
-        self.B = np.reshape(tempB, (np.shape(tempB)[0],1))
+        self.B = np.reshape(tempB, (np.shape(tempB)[0], 1))
         self.C = np.array(C)
         self.D = np.array(D)
         if np.size(np.array(stCond)) < np.size(A, axis=0):  # if starting conditions vector is too short
@@ -104,7 +106,7 @@ class ss(sys):
         strB = str(self.B)
         strC = str(self.C)
         strD = str(self.D)
-        strRes = 'A = ' + strA +'\n' + 'B = ' + strB +'\n' + 'C = ' + strC +'\n' + 'D = ' + strD + '\n'
+        strRes = 'A = ' + strA + '\n' + 'B = ' + strB + '\n' + 'C = ' + strC + '\n' + 'D = ' + strD + '\n'
         return strRes
 
 
@@ -119,21 +121,21 @@ class tf(sys):
         denominator = ''
         line = ''
         strRes = ''
-        for n,num in enumerate(self.TFnumerator):
-            if n == np.size(self.TFnumerator)-1:
+        for n, num in enumerate(self.TFnumerator):
+            if n == np.size(self.TFnumerator) - 1:
                 numerator += ' + ' + str(num)
             else:
                 if n == 0:
                     pass
                 else:
                     numerator += ' + '
-                numerator += str(num) + f's^{np.size(self.TFnumerator)-n-1}'
+                numerator += str(num) + f's^{np.size(self.TFnumerator) - n - 1}'
         denominator += f's^{np.size(self.TFdenominator)}'
-        for n,num in enumerate(self.TFdenominator):
-            if n == np.size(self.TFdenominator)-1:
+        for n, num in enumerate(self.TFdenominator):
+            if n == np.size(self.TFdenominator) - 1:
                 denominator += ' + ' + str(num)
             else:
-                denominator += ' + ' + str(num) + f's^{np.size(self.TFdenominator)-n-1}'
+                denominator += ' + ' + str(num) + f's^{np.size(self.TFdenominator) - n - 1}'
 
         largestLength = max(len(numerator), len(denominator))
         for i in range(largestLength):
@@ -143,18 +145,20 @@ class tf(sys):
         return strRes
 
 
-#returns ss system in a observable canonical form based on given tf
+# returns ss system in a observable canonical form based on given tf
 def tf2ss(system):
     if isinstance(system, tf):
-        if(system.TFdenominator[0][0] != 1):
-            system.TFnumerator = system.TFnumerator / system.TFdenominator[0][0]   #keeping the coefficient of the highest s (s^n) equal to 1
-            system.TFdenominator = system.TFdenumerator / system.TFnumerator[0][0]
+        if system.TFdenominator[0][0] != 1:
+            system.TFnumerator = system.TFnumerator / system.TFdenominator[0][
+                0]  # keeping the coefficient of the highest s (s^n) equal to 1
+            system.TFdenominator = system.TFdenominator / system.TFnumerator[0][0]
         A, B, C = system.obsv()
         D = np.array([0])
         systemSS = ss(A, B, C, D)
         return systemSS
     else:
         raise Exception('you need to pass tf system as the argument')
+
 
 def ss2tf(system):
     if isinstance(system, ss):
@@ -163,7 +167,7 @@ def ss2tf(system):
         raise Exception('you need to pass ss system as the argument')
 
 
-#returns array of poles of system
+# returns array of poles of system
 def poles(system):
     roots = np.array([])
     if isinstance(system, tf):
@@ -174,7 +178,8 @@ def poles(system):
         raise Exception('argument must be tf or ss system')
     return roots
 
-#returns array of zeros of system
+
+# returns array of zeros of system
 def zeros(system):
     if isinstance(system, tf):
         roots = np.roots(system.TFnumerator)
@@ -185,34 +190,40 @@ def zeros(system):
     return roots
 
 
-#draws phase portrait on phase plane of min 2nd order system, var1 and var2 describes which state variables need to be plot:
+# draws phase portrait on phase plane of min 2nd order system, var1 and var2 describes which state variables need to be plot:
 # 0 - x1
 # 1 - x2 etc.
-def phasePortrait(system, var1=0, var2=1, plot=False, Xinit=[1,3,5,7]):
+def phasePortrait(system, var1=0, var2=1, plot=False, Xinit=None):
+    if Xinit is None:
+        Xinit = [1, 3, 5, 7]
     if isinstance(system, tf):
         systemSS = tf2ss(system)
-        phasePlot(systemSS, var1, var2)
+        phasePortrait(systemSS, var1, var2)
     elif isinstance(system, ss):
         if np.shape(system.A)[0] >= 2:
             Xinit = np.array(Xinit)
             Y = T = Xtmp = X = np.array([[]])
             for i in range(len(Xinit)):
-                Y,T,Xtmp = Tresp.solveTrap(system, 0, Xinit[i])
+                Y, T, Xtmp = tresp.solveTrap(system, 0, Xinit[i])
                 if i == 0:
                     X = Xtmp
                 else:
-                    X = np.vstack((X,Xtmp))     #adding rows to state trajectory matrix
+                    X = np.vstack((X, Xtmp))  # adding rows to state trajectory matrix
             stateNum = np.shape(system.A)[0]
             XrowsNum = np.shape(X)[0]
             if stateNum >= var1 or stateNum >= var2:
                 fig = plt.figure()
                 ax = fig.add_subplot()
                 plt.grid(linestyle='--')
-                for k in range(0,XrowsNum,stateNum):
-                        ax.plot(X[k+var1], X[k+var2])
-                ax.set_ylabel(f'x{var1+1}(t)')
-                ax.set_xlabel(f'x{var2+1}(t)')
+                for k in range(0, XrowsNum, stateNum):
+                    ax.plot(X[k + var1], X[k + var2])
+                ax.set_ylabel(f'x{var1 + 1}(t)')
+                ax.set_xlabel(f'x{var2 + 1}(t)')
                 ax.set_title('Phase portrait')
+                legendList = []
+                for xo in Xinit:
+                    legendList.append(f'xo={xo}')
+                plt.legend(legendList)
                 plt.show()
             else:
                 raise Exception("system doesn't have that many state variables. Lower var1 or var2")
@@ -220,81 +231,81 @@ def phasePortrait(system, var1=0, var2=1, plot=False, Xinit=[1,3,5,7]):
             raise Exception('system needs to be at least 2nd order')
 
 
-#takes system and returns tuple of vectors (Y,T,X) - response and time vectors and state trajectory matrix
-def step(system, Tpts=None, plot = False, solver = 'trap'):
+# takes system and returns tuple of vectors (Y,T,X) - response and time vectors and state trajectory matrix
+def step(system, Tpts=None, plot=False, solver='trap'):
     Y = T = X = np.array([])
     if isinstance(system, tf):
         systemSS = tf2ss(system)
         step(systemSS)
     elif isinstance(system, ss):
-        if solver == 'ee':             #explicit (forward) Euler
-            Y,T,X = Tresp.solveEE(system, 1)
-        elif solver == 'ie':           #implicit (backward) Euler
-            Y,T,X = Tresp.solveIE(system, 1)
-        elif solver == 'trap':         #trapezoidal
-            Y,T,X = Tresp.solveTrap(system, 1)
+        if solver == 'ee':  # explicit (forward) Euler
+            Y, T, X = tresp.solveEE(system, 1)
+        elif solver == 'ie':  # implicit (backward) Euler
+            Y, T, X = tresp.solveIE(system, 1)
+        elif solver == 'trap':  # trapezoidal
+            Y, T, X = tresp.solveTrap(system, 1)
         elif solver == 'rk4':
-            Y,T,X = Tresp.solveRK4(system, 1)
+            Y, T, X = tresp.solveRK4(system, 1)
         else:
             raise Exception('wrong solver chosen, choose: ee, ie, trap or rk4')
-        if Tpts != None:
+        if Tpts is not None:
             Yi = np.interp(Tpts, T, Y)
             Y = Yi
             T = Tpts
         if plot:
             fig = plt.figure()
             ax = fig.add_subplot()
-            ax.plot(T,Y)
+            ax.plot(T, Y)
             ax.set_title('Step response')
             ax.set_ylabel('y(t)')
             ax.set_xlabel('t [s]')
             plt.show()
         else:
-            return (Y,T,X)
+            return Y, T, X
     else:
         raise Exception('argument must be a tf or ss system')
 
 
-#takes system and returns tuple of vectors (Y,T) - response and time vectors
-def pulse(system, plot = False, solver = 'trap'):
+# takes system and returns tuple of vectors (Y,T) - response and time vectors
+def pulse(system, plot=False, solver='trap'):
     Y = T = X = np.array([])
     if isinstance(system, tf):
         systemSS = tf2ss(system)
         step(systemSS)
     elif isinstance(system, ss):
-        if solver == 'ee':             #explicit (forward) Euler
-            Y,T,X = Tresp.solveEE(system, 'delta')
-        elif solver == 'ie':           #implicit (backward) Euler
-            Y,T,X = Tresp.solveIE(system, 'delta')
-        elif solver == 'trap':         #trapezoidal
-            Y,T,X = Tresp.solveTrap(system, 'delta')
+        if solver == 'ee':  # explicit (forward) Euler
+            Y, T, X = tresp.solveEE(system, 'delta')
+        elif solver == 'ie':  # implicit (backward) Euler
+            Y, T, X = tresp.solveIE(system, 'delta')
+        elif solver == 'trap':  # trapezoidal
+            Y, T, X = tresp.solveTrap(system, 'delta')
         elif solver == 'rk4':
-            Y,T,X = Tresp.solveRK4(system, 'delta')
+            Y, T, X = tresp.solveRK4(system, 'delta')
         else:
             raise Exception('wrong solver chosen, choose: ee, ie, trap or rk4')
         if plot:
             fig = plt.figure()
             ax = fig.add_subplot()
-            ax.plot(T,Y)
+            ax.plot(T, Y)
             ax.set_title('Impulse response')
             ax.set_ylabel('y(t)')
             ax.set_xlabel('t [s]')
             plt.show()
         else:
-            return (Y,T,X)
+            return (Y, T, X)
     else:
         raise Exception('argument must be a tf or ss system')
 
 
-
-#python's pow() function couldn't handle complex numbers and was trying to cast it into something else
+# python's pow() function couldn't handle complex numbers and was trying to cast it into something else
 def __imagPow(base, power):
     res = 1
-    for i in range(power-1):
+    for i in range(power - 1):
         res *= base
     return res
 
-#creates sinusodial transfer function G(jw)
+
+# creates sinusodial transfer function G(jw)
 def __sinTF(system):
     num = []
     den = []
@@ -304,34 +315,34 @@ def __sinTF(system):
         for i in range(len(system.TFdenominator)):
             den.append(complex(system.TFdenominator[i], 0))
         for i in range(len(num)):
-            num[i] = num[i]*__imagPow(1j, len(num)-i)
+            num[i] = num[i] * __imagPow(1j, len(num) - i)
         for k in range(len(den)):
-            den[k] = den[k]*__imagPow(1j, len(den)-k)
+            den[k] = den[k] * __imagPow(1j, len(den) - k)
         return (num, den)
     elif isinstance(system, ss):
         systemTF = ss2tf(system)
         __sinTF(systemTF)
 
 
-#draws bode diagrams for system
+# draws bode diagrams for system
 def bode(system):
-    n,d = __sinTF(system)
+    n, d = __sinTF(system)
     num = den = 0
     Gvec = np.array([])
     Phvec = np.array([])
     Wvec = np.array([])
-    #calculating the amplitude and phase characteristics
-    for w in np.linspace(0.1,1000,20000):
+    # calculating the amplitude and phase characteristics
+    for w in np.linspace(0.1, 1000, 20000):
         for i in range(len(n)):
-           num += n[i]*pow(w,len(n)-i) 
+            num += n[i] * pow(w, len(n) - i)
         for k in range(len(d)):
-           den += d[k]*pow(w,len(d)-k)
-        G = 20*log(abs(num/den))
-        Ph = np.angle((num/den), deg=True)
+            den += d[k] * pow(w, len(d) - k)
+        G = 20 * log(abs(num / den))
+        Ph = np.angle((num / den), deg=True)
         Wvec = np.append(Wvec, w)
         Gvec = np.append(Gvec, G)
         Phvec = np.append(Phvec, Ph)
-    fig,ax = plt.subplots(2)
+    fig, ax = plt.subplots(2)
     plt.grid(linestyle='--')
     ax[0].set_title('Bode diagrams')
     ax[0].set_ylabel('Magnitude [dB]')
@@ -345,21 +356,21 @@ def bode(system):
     plt.show()
 
 
-#draws nyquist plot of system
-#FIXME weird plots (a bit different to matlab/octave)
+# draws nyquist plot of system
+# FIXME weird plots (a bit different to matlab/octave)
 def nyquist(system):
-    n,d = __sinTF(system)
+    n, d = __sinTF(system)
     num = den = 0
     Pvec = np.array([])
     Qvec = np.array([])
     Wvec = np.array([])
-    for w in np.linspace(0.1,1000,40000):
+    for w in np.linspace(0.1, 1000, 40000):
         for i in range(len(n)):
-           num += n[i]*pow(w,len(n)-i) 
+            num += n[i] * pow(w, len(n) - i)
         for k in range(len(d)):
-           den += d[k]*pow(w,len(d)-k)
-        P = abs(num/den)
-        Q = (num/den).imag
+            den += d[k] * pow(w, len(d) - k)
+        P = abs(num / den)
+        Q = (num / den).imag
         Wvec = np.append(Wvec, w)
         Pvec = np.append(Pvec, P)
         Qvec = np.append(Qvec, Q)
@@ -370,25 +381,24 @@ def nyquist(system):
     ax.set_ylabel('Q(ω)')
     ax.set_xlabel('P(ω)')
     ax.plot(Pvec, Qvec)
-    ax.plot(Pvec, -1*Qvec)
+    ax.plot(Pvec, -1 * Qvec)
     plt.show()
-    
 
-def rlocus(system,CLtf=tf([1],[1])):
+
+def rlocus(system, CLtf=tf([1], [1])):
     if isinstance(system, tf):
         k = 0
         OLpoles = np.roots(system.TFdenominator)
         OLzeros = np.roots(system.TFnumerator)
-        temp1 = np.polynomial.polynomial.polymul(CLtf.TFdenominator,system.TFdenominator)
-        temp2 = np.polynomial.polynomial.polymul(CLtf.TFnumerator,system.TFnumerator)
-        CLdenominator = np.polynomial.polynomial.polyadd(temp1,temp2)
-        CLnumerator = np.polynomial.polynomial.polymul(CLtf.TFdenominator,system.TFnumerator)
+        temp1 = np.polynomial.polynomial.polymul(CLtf.TFdenominator, system.TFdenominator)
+        temp2 = np.polynomial.polynomial.polymul(CLtf.TFnumerator, system.TFnumerator)
+        CLdenominator = np.polynomial.polynomial.polyadd(temp1, temp2)
+        CLnumerator = np.polynomial.polynomial.polymul(CLtf.TFdenominator, system.TFnumerator)
         CLpoles = np.roots(CLdenominator)
         CLzeros = np.roots(CLnumerator)
-#continue
+    # continue
 
     elif isinstance(system, ss):
         pass
     else:
         pass
-
