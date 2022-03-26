@@ -2,3 +2,6 @@
 /venv/
 /.vim/
 /.idea/
+/dist/
+pyproject.toml
+setup.cfg
