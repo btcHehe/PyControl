@@ -1,10 +1,10 @@
 import numpy as np
-import PyControl.models
+import PyControl.models as md
 
 def __setupArrs(system, U, initX = 0, time = 5, h = 0.001, to = 0):
     A = B = C = D = np.array([])
-    if isinstance(system, models.tf):
-        systemSS = models.tf2ss(system)
+    if isinstance(system, md.tf):
+        systemSS = md.tf2ss(system)
         A = systemSS.A
         B = systemSS.B
         C = systemSS.C
