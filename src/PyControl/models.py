@@ -121,15 +121,18 @@ class tf(sys):
         denominator = ''
         line = ''
         strRes = ''
-        for n, num in enumerate(self.TFnumerator):
-            if n == np.size(self.TFnumerator) - 1:
-                numerator += ' + ' + str(num)
-            else:
-                if n == 0:
-                    pass
+        if np.size(self.TFnumerator) == 1:
+            numerator += str(self.TFnumerator[0])
+        else:
+            for n, num in enumerate(self.TFnumerator):
+                if n == np.size(self.TFnumerator) - 1:
+                    numerator += ' + ' + str(num)
                 else:
-                    numerator += ' + '
-                numerator += str(num) + f's^{np.size(self.TFnumerator) - n - 1}'
+                    if n == 0:
+                        pass
+                    else:
+                        numerator += ' + '
+                    numerator += str(num) + f's^{np.size(self.TFnumerator) - n - 1}'
         denominator += f's^{np.size(self.TFdenominator)}'
         for n, num in enumerate(self.TFdenominator):
             if n == np.size(self.TFdenominator) - 1:
