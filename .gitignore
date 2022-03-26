@@ -1,7 +1,7 @@
-/pyControl/test.py
 /venv/
 /.vim/
 /.idea/
 /dist/
 pyproject.toml
 setup.cfg
+/src/PyControl.egg-info
