@@ -18,21 +18,21 @@
 
 ### Model building
 
-Equations we are gonna use in model building:
+Equations we are gonna use in model building:  
 ![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/electronics/img/1.png "basic equations")
 
-Using Kirchhoff's Voltage Law we can derive equations:
+Using Kirchhoff's Voltage Law we can derive equations:  
 ![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/electronics/img/KVL.png "KVL equations")
 
-Assuming zero initial conditions we can derive transfer function for our object:
+Assuming zero initial conditions we can derive transfer function for our object:  
 ![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/electronics/img/tf.png "transfer function definition")
 
-General state space model:
+General state space model:  
 ![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/electronics/img/ss.png "state space equations")
 
-Now we can define our state space variables as (our goal is to control output voltage):
+Now we can define our state space variables as (our goal is to control output voltage):  
 ![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/electronics/img/ssconv.png "state space convertion equations")
 
-Finally we define state space model matrices as:
+Finally we define state space model matrices as:  
 ![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/electronics/img/mats.png "state space matrix definition")
 
