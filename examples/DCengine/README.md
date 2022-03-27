@@ -2,11 +2,11 @@
 
 ### System image
 
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/DCengine/img/system.png "system image")
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/DCengine/img/system.png "system image")
 
 ### Block diagram
 
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/DCengine/img/systemDiag.png "block diagram image")
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/DCengine/img/systemDiag.png "block diagram image")
 
 ### Parameters
 * U(t) - input voltage
@@ -21,22 +21,22 @@
 
 ### Model building
 
-Equations we are gonna use in model building:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/DCengine/img/1.png "basic equations")
+Equations we are gonna use in model building:  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/DCengine/img/1.png "basic equations")
 
-Using Kirchhoff's Voltage Law we can derive equations:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/DCengine/img/KVL.png "KVL equations")
+Using Kirchhoff's Voltage Law we can derive equations:  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/DCengine/img/KVL.png "KVL equations")
 
-From mechanics we can derive torque equations:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/DCengine/img/torque.png "torque equations")
+From mechanics we can derive torque equations:  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/DCengine/img/torque.png "torque equations")
 
-General state space model:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/DCengine/img/ss.png "state space equations")
+General state space model:  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/DCengine/img/ss.png "state space equations")
 
-Now we can define our state space variables as (our goal is to control angular velocity):
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/DCengine/img/ssconv.png "state space convertion equations")
+Now we can define our state space variables as (our goal is to control angular velocity):          
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/DCengine/img/ssconv.png "state space convertion equations")
 
-Finally we define state space model matrices as:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/DCengine/img/mats.png "state space matrix definition")
+Finally we define state space model matrices as:    
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/DCengine/img/mats.png "state space matrix definition")
 
 

@@ -2,11 +2,11 @@
 
 ### System image
 
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/satellite/img/system.png "system image")
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/system.png "system image")
 
 ### Block diagram
 
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/satellite/img/systemDiag.png "block diagram image")
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/systemDiag.png "block diagram image")
 
 ### Parameters
 * M(t) - Torque acting on satellite
@@ -15,20 +15,20 @@
 
 ### Model building
 
-Equations we are gonna use in model building:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/satellite/img/1.png "basic equations")
+Equations we are gonna use in model building:  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/1.png "basic equations")
 
-Using Newton's Second Law for angular motion we can derive equations:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/satellite/img/nsl.png "Newton's second law equations")
+Using Newton's Second Law for angular motion we can derive equations:  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/nsl.png "Newton's second law equations")
 
-Assuming zero initial conditions we can derive transfer function for our object:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/satellite/img/tf.png "transfer function definition")
+Assuming zero initial conditions we can derive transfer function for our object:  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/tf.png "transfer function definition")
 
-General state space model:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/satellite/img/ss.png "state space equations")
+General state space model:  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/ss.png "state space equations")
 
-Now we can define our state space variables as (our goal is to control output voltage):
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/satellite/img/ssconv.png "state space convertion equations")
+Now we can define our state space variables as (our goal is to control output voltage):  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/ssconv.png "state space convertion equations")
 
-Finally we define state space model matrices as:
-![alt text](https://github.com/btcHehe/PyControl/tree/master/examples/satellite/img/mats.png "state space matrix definition")
+Finally we define state space model matrices as:  
+![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/mats.png "state space matrix definition")
