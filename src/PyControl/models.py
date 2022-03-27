@@ -45,8 +45,8 @@ class sys:
     # highest power of the s in denominator must be bigger than highest power in the numerator
     # highest power of s in denominator must have coefficient equal 1
     def obsv(self):
-        if self.TFdenominator[0][0] == 1:
-            self.TFdenominator = self.TFdenominator[0][1:]
+        if self.TFdenominator[0] == 1:
+            self.TFdenominator = self.TFdenominator[1:]
         numCols = np.size(self.TFnumerator)
         denCols = np.size(self.TFdenominator)
         if denCols > numCols:  # making numerator and denominator equal length filling with 0
@@ -116,7 +116,8 @@ class tf(sys):
     def __init__(self, num, denum):
         super().__init__()
         self.TFnumerator = np.array(num)
-        self.TFdenominator = np.array(denum)
+        propDen = [1]
+        self.TFdenominator = np.array(propDen + denum)
 
     def __str__(self):
         numerator = ''
@@ -135,12 +136,14 @@ class tf(sys):
                     else:
                         numerator += ' + '
                     numerator += str(num) + f's^{np.size(self.TFnumerator) - n - 1}'
-        denominator += f's^{np.size(self.TFdenominator)}'
         for n, num in enumerate(self.TFdenominator):
-            if n == np.size(self.TFdenominator) - 1:
-                denominator += ' + ' + str(num)
+            if n == 0:
+                denominator += f's^{np.size(self.TFdenominator)-1}'
             else:
-                denominator += ' + ' + str(num) + f's^{np.size(self.TFdenominator) - n - 1}'
+                if n == np.size(self.TFdenominator) - 1:
+                    denominator += ' + ' + str(num)
+                else:
+                    denominator += ' + ' + str(num) + f's^{np.size(self.TFdenominator) - n - 1}'
 
         largestLength = max(len(numerator), len(denominator))
         for i in range(largestLength):
@@ -153,10 +156,9 @@ class tf(sys):
 # returns ss system in a observable canonical form based on given tf
 def tf2ss(system):
     if isinstance(system, tf):
-        if system.TFdenominator[0][0] != 1:
-            system.TFnumerator = system.TFnumerator / system.TFdenominator[0][
-                0]  # keeping the coefficient of the highest s (s^n) equal to 1
-            system.TFdenominator = system.TFdenominator / system.TFnumerator[0][0]
+        if system.TFdenominator[0] != 1:
+            system.TFnumerator = system.TFnumerator / system.TFdenominator[0]  # keeping the coefficient of the highest s (s^n) equal to 1
+            system.TFdenominator = system.TFdenominator / system.TFnumerator[0]
         A, B, C = system.obsv()
         D = np.array([0])
         systemSS = ss(A, B, C, D)
