@@ -2,11 +2,11 @@
 
 ### System image
 
-![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/system.png "system image")
+![System image](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/system.png "system image")
 
 ### Block diagram
 
-![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/systemDiag.png "block diagram image")
+![block diagram image](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/systemDiag.png "block diagram image")
 
 ### Parameters
 * M(t) - Torque acting on satellite
@@ -16,13 +16,13 @@
 ### Model building
 
 Equations we are gonna use in model building:  
-![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/1.png "basic equations")
+![basic equations](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/1.png "basic equations")
 
 Using Newton's Second Law for angular motion we can derive equations:  
-![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/nsl.png "Newton's second law equations")
+![Newton's second law equations](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/nsl.png "Newton's second law equations")
 
 Assuming zero initial conditions we can derive transfer function for our object:  
-![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/tf.png "transfer function definition")
+![transfer function definition](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/tf.png "transfer function definition")
 
 General state space model:  
 ![alt text](https://github.com/btcHehe/PyControl/blob/master/examples/satellite/img/ss.png "state space equations")

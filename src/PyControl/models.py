@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import PyControl.time_response as tresp
+import time_response as tresp
 from math import log
 
 
@@ -103,7 +103,7 @@ class sys:
 
 
 class ss(sys):
-    def __init__(self, A, B, C, D=0, stCond=None):
+    def __init__(self, A, B, C, D=[0], stCond=None):
         super().__init__()
         if stCond is None:
             stCond = []
@@ -161,7 +161,7 @@ class tf(sys):
         for n, num in enumerate(self.TFdenominator):
             if num != 0:
                 if n == 0:
-                    denominator += f'{num}s^{np.size(self.TFdenominator)-1}'
+                    denominator += f'{num}s^{np.size(self.TFdenominator) - 1}'
                 else:
                     if n == np.size(self.TFdenominator) - 1:
                         denominator += ' + ' + str(num)
@@ -180,7 +180,7 @@ class tf(sys):
 def tf2ss(system):
     if isinstance(system, tf):
         A, B, C = system.obsv()
-        D = 0
+        D = [0]
         systemSS = ss(A, B, C, D)
         return systemSS
     else:
@@ -219,46 +219,44 @@ def zeros(system):
 
 # draws phase portrait on phase plane of min 2nd order system, var1 and var2 describes which state variables need to
 # be plot: 0 - x1 1 - x2 etc.
-def phasePortrait(system, var1=0, var2=1, Xinit=None):
+def phasePortrait(system, Xinit=None, var1=0, var2=1, t=1):
     if Xinit is None:
-        Xinit = [1, 3, 5, 7]
+        Xinit = [[-1, -2], [-3, -4], [5, 6], [7, 8]]
     if isinstance(system, tf):
         systemSS = tf2ss(system)
         phasePortrait(systemSS, var1, var2)
     elif isinstance(system, ss):
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        plt.grid(linestyle='--')
+        ax.set_title('Phase portrait')
+        ax.set_ylabel(f'x{var1 + 1}(t)')
+        ax.set_xlabel(f'x{var2 + 1}(t)')
+        legendList = []
         if np.shape(system.A)[0] >= 2:
             Xinit = np.array(Xinit)
-            Y = T = Xtmp = X = np.array([[]])
-            for i in range(len(Xinit)):
-                Y, T, Xtmp = tresp.solveTrap(system, 0, Xinit[i])
-                if i == 0:
-                    X = Xtmp
+            for i in range(np.shape(Xinit)[0]):
+                Y = T = Xtmp = X = np.array([[]])
+                Y, T, Xtmp = tresp.solveRK4(system, 0, Xinit[i], time=t)
+                X = Xtmp
+                stateNum = np.shape(system.A)[0]
+                XrowsNum = np.shape(X)[0]
+                if stateNum >= var1 or stateNum >= var2:
+                    # for k in range(0, XrowsNum, stateNum):
+                    #     ax.plot(X[k + var1], X[k + var2])
+                    ax.plot(X[var1], X[var2])
+                    legendList.append(f'xo={Xinit[i]}')
                 else:
-                    X = np.vstack((X, Xtmp))  # adding rows to state trajectory matrix
-            stateNum = np.shape(system.A)[0]
-            XrowsNum = np.shape(X)[0]
-            if stateNum >= var1 or stateNum >= var2:
-                fig = plt.figure()
-                ax = fig.add_subplot()
-                plt.grid(linestyle='--')
-                for k in range(0, XrowsNum, stateNum):
-                    ax.plot(X[k + var1], X[k + var2])
-                ax.set_ylabel(f'x{var1 + 1}(t)')
-                ax.set_xlabel(f'x{var2 + 1}(t)')
-                ax.set_title('Phase portrait')
-                legendList = []
-                for xo in Xinit:
-                    legendList.append(f'xo={xo}')
-                plt.legend(legendList)
-                plt.show()
-            else:
-                raise Exception("system doesn't have that many state variables. Lower var1 or var2")
+                    raise Exception("system doesn't have that many state variables. Lower var1 or var2")
+
+            plt.legend(legendList)
+            plt.show()
         else:
             raise Exception('system needs to be at least 2nd order')
 
 
 # takes system and returns tuple of vectors (Y,T,X) - response and time vectors and state trajectory matrix
-def step(system, Tpts=None, plot=False, solver='trap'):
+def step(system, Tpts=None, plot=False, solver='rk4'):
     Y = T = X = np.array([])
     if isinstance(system, tf):
         systemSS = tf2ss(system)
@@ -293,7 +291,7 @@ def step(system, Tpts=None, plot=False, solver='trap'):
 
 
 # takes system and returns tuple of vectors (Y,T) - response and time vectors
-def pulse(system, plot=False, solver='trap'):
+def pulse(system, plot=False, solver='rk4'):
     Y = T = X = np.array([])
     if isinstance(system, tf):
         systemSS = tf2ss(system)
@@ -344,7 +342,7 @@ def __sinTF(system):
             num[i] = num[i] * __imagPow(1j, len(num) - i)
         for k in range(len(den)):
             den[k] = den[k] * __imagPow(1j, len(den) - k)
-        return (num, den)
+        return num, den
     elif isinstance(system, ss):
         systemTF = ss2tf(system)
         __sinTF(systemTF)
@@ -382,7 +380,7 @@ def bode(system, plot=False):
         ax[1].plot(Wvec, Phvec)
         plt.show()
     else:
-        return(Gvec, Phvec, Wvec)
+        return Gvec, Phvec, Wvec
 
 
 # draws nyquist plot of system
@@ -431,5 +429,3 @@ def rlocus(system, CLtf=tf([1], [1])):
         pass
     else:
         pass
-
-

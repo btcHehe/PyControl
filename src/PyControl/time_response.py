@@ -1,8 +1,8 @@
 import numpy as np
-import PyControl.models as md
+import models as md
 
 
-def __setupArrs(system, U, initX=0, time=5, h=0.001, to=0):
+def __setupArrs(system, U, initX=0, time=10, h=0.001, to=0):
     A = B = C = D = np.array([])
     if isinstance(system, md.tf):
         systemSS = md.tf2ss(system)
@@ -15,18 +15,18 @@ def __setupArrs(system, U, initX=0, time=5, h=0.001, to=0):
         B = system.B
         C = system.C
         D = system.D
-    Xo = np.array([])
     rowNum = np.shape(A)[0]
-    X = np.full((rowNum, 1), 0)
     if isinstance(initX, np.ndarray):
-        Xo = initX
-    else:  # if you assign number into initX it
-        # would be the initial value for all the state variables
+        Xo = np.array([initX])
+    elif initX == 0:
+        Xo = np.zeros((1, rowNum))
+    else:
         temp = np.full((rowNum, 1), initX)
         Xo = temp
-    X = Xo
+    X = np.transpose(Xo)
     Y = np.array([])
-    Yo = np.dot(C, Xo) + D
+    C = np.array([C])
+    Yo = np.dot(C, X) + D
     Y = np.append(Y, Yo)
     T = np.array([])
     T = np.append(T, to)
@@ -37,7 +37,7 @@ def __setupArrs(system, U, initX=0, time=5, h=0.001, to=0):
 
 # calculating time domain response and state trajectory of LTI system using Explicit (Forward) Euler method [time in
 # seconds]
-def solveEE(system, U, initX=0, time=5, h=0.001, to=0):
+def solveEE(system, U, initX=0, time=10, h=0.001, to=0):
     A, B, C, D, X, Y, T, N, t = __setupArrs(system, U, initX, time, h, to)
     Udlt = False
     if U == 'delta':
@@ -58,7 +58,7 @@ def solveEE(system, U, initX=0, time=5, h=0.001, to=0):
 
 
 # calculating time domain response and state trajectory of LTI system using Implicit (Backward) Euler method
-def solveIE(system, U, initX=0, time=5, h=0.001, to=0):
+def solveIE(system, U, initX=0, time=10, h=0.001, to=0):
     A, B, C, D, X, Y, T, N, t = __setupArrs(system, U, initX, time, h, to)
     Udlt = False
     if U == 'delta':
@@ -80,7 +80,7 @@ def solveIE(system, U, initX=0, time=5, h=0.001, to=0):
 
 
 # calculating time domain response and state trajectory of LTI system using Trapezoidal method
-def solveTrap(system, U, initX=0, time=5, h=0.001, to=0):
+def solveTrap(system, U, initX=0, time=10, h=0.001, to=0):
     A, B, C, D, X, Y, T, N, t = __setupArrs(system, U, initX, time, h, to)
     Udlt = False
     if U == 'delta':
@@ -105,7 +105,7 @@ def solveTrap(system, U, initX=0, time=5, h=0.001, to=0):
 
 # calculating time domain response and state trajectory of LTI system using Runge-Kutta 4 method
 # X' = f(X) => X' = A*X + B*U
-def solveRK4(system, U, initX=0, time=5, h=0.001, to=0):
+def solveRK4(system, U, initX=0, time=10, h=0.001, to=0):
     A, B, C, D, X, Y, T, N, t = __setupArrs(system, U, initX, time, h, to)
     k1 = k2 = k3 = k4 = np.array([])
     Udlt = False
