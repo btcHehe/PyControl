@@ -5,7 +5,6 @@ from math import log
 
 
 # TODO:
-# -combining transfer functions with *
 # -root locus func
 # -nyquist plots
 # -function for model recognition
@@ -15,8 +14,8 @@ from math import log
 # -discrete time variants
 
 # denominator and numerator coefficients must be given in a specific order:
-#   numerator: a1*s^n + a2*s^(n-1) + a3*s^(n-2) + a4*s^(n-3) + ... + an =>  [a1, a2, a3, a4, ..., an]
-#   denominator: s^n + b1*s^(n-1) + b2*s^(n-2) + b3*s^(n-3) + ... + bn => [b1, b2, b3, ..., bn]
+# numerator: a1*s^n + a2*s^(n-1) + a3*s^(n-2) + a4*s^(n-3) + ... + an =>  [a1, a2, a3, a4, ..., an]
+# denominator: b1*s^n + b2*s^(n-1) + b3*s^(n-2) + b4*s^(n-3) + ... + bn => [b1, b2, b3, ..., bn]
 
 
 class sys:
@@ -45,21 +44,28 @@ class sys:
     # highest power of the s in denominator must be bigger than highest power in the numerator
     # highest power of s in denominator must have coefficient equal 1
     def obsv(self):
-        if self.TFdenominator[0] == 1:
-            self.TFdenominator = self.TFdenominator[1:]
+        num = self.TFnumerator
+        den = self.TFdenominator
         numCols = np.size(self.TFnumerator)
         denCols = np.size(self.TFdenominator)
+        if denCols <= numCols:
+            raise Exception('denominator must be higher order than numerator')
+        if den[0] != 1:
+            div = den[0]
+            num = num / div
+            den = den / div
+        den = den[1:]
+        numCols = np.size(num)
+        denCols = np.size(den)
         if denCols > numCols:  # making numerator and denominator equal length filling with 0
             tempArr = np.zeros(denCols)
-            tempArr[denCols - numCols:] = self.TFnumerator
-            self.TFnumerator = tempArr
-        elif denCols < numCols:
-            raise Exception('denominator must be higher order than numerator')
-        obsvA = np.array([-1 * self.TFdenominator]).transpose()  # column of minus denumerator values
+            tempArr[denCols - numCols:] = num
+            num = tempArr
+        obsvA = np.array([-1 * den]).transpose()  # column of minus denumerator values
         subMat = np.identity(denCols - 1)  # identity matrix
         subMat = np.vstack((subMat, np.zeros(denCols - 1)))  # row of 0 added to identity matrix
         obsvA = np.append(obsvA, subMat, axis=1)
-        obsvB = self.TFnumerator[..., None]  # column of numerator values
+        obsvB = num[..., None]  # column of numerator values
         obsvC = np.array([1])
         obsvC = np.append(obsvC, np.zeros(denCols - 1), axis=0)  # row of 0
         return obsvA, obsvB, obsvC
@@ -68,26 +74,36 @@ class sys:
     # highest power of the s in denominator must be bigger than highest power in the numerator
     # highest power of s in denominator must have coefficient equal 1
     def contr(self):
+        num = self.TFnumerator
+        den = self.TFdenominator
         numCols = np.size(self.TFnumerator)
         denCols = np.size(self.TFdenominator)
+        if numCols >= denCols:
+            raise Exception('denominator must be higher order than numerator')
+        if den[0] != 1:
+            div = den[0]
+            num = num / div
+            den = den / div
+        den = den[1:]
+        numCols = np.size(num)
+        denCols = np.size(den)
         if denCols > numCols:  # making numerator and denominator equal length filling with 0
             tempArr = np.zeros(denCols)
-            tempArr[denCols - numCols:] = self.TFnumerator
-            self.TFnumerator = tempArr
-        elif denCols < numCols:
-            raise Exception('denominator must be higher order than numerator')
+            tempArr[denCols - numCols:] = num
+            num = tempArr
         contA = np.zeros(denCols - 1)[..., None]  # column of 0
         subMat = np.identity(denCols - 1)  # identity matrix
         contA = np.append(contA, subMat, axis=1)
-        contA = np.append(contA, -1 * self.TFdenominator, axis=0)  # row of minus denumerator values
+        col = np.array([-1 * den])
+        contA = np.append(contA, col, axis=0)
         contB = np.zeros(denCols - 1)[..., None]  # column of 0
         contB = np.vstack((contB, np.array([1])))
-        contC = np.array(self.TFnumerator)  # row of numerator values
+        contC = np.array(num)  # row of numerator values
         return contA, contB, contC
 
 
 class ss(sys):
-    def __init__(self, A, B, C, D=[0], stCond=None):
+    def __init__(self, A, B, C, D=0, stCond=None):
         super().__init__()
         if stCond is None:
             stCond = []
@@ -116,8 +132,13 @@ class tf(sys):
     def __init__(self, num, denum):
         super().__init__()
         self.TFnumerator = np.array(num)
-        propDen = [1]
-        self.TFdenominator = np.array(propDen + denum)
+        self.TFdenominator = np.array(denum)
+
+    def __mul__(self, otherSys):
+        newNumerator = np.polymul(self.TFnumerator, otherSys.TFnumerator)
+        newDenominator = np.polymul(self.TFdenominator, otherSys.TFdenominator)
+        newSys = tf(newNumerator, newDenominator)
+        return newSys
 
     def __str__(self):
         numerator = ''
@@ -128,22 +149,24 @@ class tf(sys):
             numerator += str(self.TFnumerator[0])
         else:
             for n, num in enumerate(self.TFnumerator):
-                if n == np.size(self.TFnumerator) - 1:
-                    numerator += ' + ' + str(num)
-                else:
-                    if n == 0:
-                        pass
+                if num != 0:
+                    if n == np.size(self.TFnumerator) - 1:
+                        numerator += ' + ' + str(num)
                     else:
-                        numerator += ' + '
-                    numerator += str(num) + f's^{np.size(self.TFnumerator) - n - 1}'
+                        if n == 0:
+                            pass
+                        else:
+                            numerator += ' + '
+                        numerator += str(num) + f's^{np.size(self.TFnumerator) - n - 1}'
         for n, num in enumerate(self.TFdenominator):
-            if n == 0:
-                denominator += f's^{np.size(self.TFdenominator)-1}'
-            else:
-                if n == np.size(self.TFdenominator) - 1:
-                    denominator += ' + ' + str(num)
+            if num != 0:
+                if n == 0:
+                    denominator += f'{num}s^{np.size(self.TFdenominator)-1}'
                 else:
-                    denominator += ' + ' + str(num) + f's^{np.size(self.TFdenominator) - n - 1}'
+                    if n == np.size(self.TFdenominator) - 1:
+                        denominator += ' + ' + str(num)
+                    else:
+                        denominator += ' + ' + str(num) + f's^{np.size(self.TFdenominator) - n - 1}'
 
         largestLength = max(len(numerator), len(denominator))
         for i in range(largestLength):
@@ -156,11 +179,8 @@ class tf(sys):
 # returns ss system in a observable canonical form based on given tf
 def tf2ss(system):
     if isinstance(system, tf):
-        if system.TFdenominator[0] != 1:
-            system.TFnumerator = system.TFnumerator / system.TFdenominator[0]  # keeping the coefficient of the highest s (s^n) equal to 1
-            system.TFdenominator = system.TFdenominator / system.TFnumerator[0]
         A, B, C = system.obsv()
-        D = np.array([0])
+        D = 0
         systemSS = ss(A, B, C, D)
         return systemSS
     else:
@@ -197,9 +217,8 @@ def zeros(system):
     return roots
 
 
-# draws phase portrait on phase plane of min 2nd order system, var1 and var2 describes which state variables need to be plot:
-# 0 - x1
-# 1 - x2 etc.
+# draws phase portrait on phase plane of min 2nd order system, var1 and var2 describes which state variables need to
+# be plot: 0 - x1 1 - x2 etc.
 def phasePortrait(system, var1=0, var2=1, Xinit=None):
     if Xinit is None:
         Xinit = [1, 3, 5, 7]
@@ -299,7 +318,7 @@ def pulse(system, plot=False, solver='trap'):
             ax.set_xlabel('t [s]')
             plt.show()
         else:
-            return (Y, T, X)
+            return Y, T, X
     else:
         raise Exception('argument must be a tf or ss system')
 
