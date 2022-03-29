@@ -32,6 +32,8 @@ D = [0]
 ssSystem = ss(A, B, C, D)
 step(ssSystem, plot=True)
 ```
+**Output:**  
+![Step response](https://github.com/btcHehe/PyControl/blob/master/img/exmplStep.png "step response")
 ```python
 from PyControl.models import *
 
@@ -43,8 +45,7 @@ D = [0]
 ssSystem = ss(A, B, C, D)
 pulse(ssSystem, plot=True)
 ```
-Output:  
-![Step response](https://github.com/btcHehe/PyControl/blob/master/img/exmplStep.png "step response")
+**Output:**  
 ![Pulse response](https://github.com/btcHehe/PyControl/blob/master/img/exmplPulse.png "pulse response")
 ### Phase portrait plotting
 ```python
@@ -58,5 +59,5 @@ D = [0]
 ssSystem = ss(A, B, C, D)
 phasePortrait(ssSystem, t=10)
 ```
-Output:  
+**Output:**  
 ![phase portrait](https://github.com/btcHehe/PyControl/blob/master/img/exmplPhasePortrait.png "phase portrait")
