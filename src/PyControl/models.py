@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import time_response as tresp
-from math import log
+from . import time_response as tresp
 
 
 # TODO:
@@ -30,15 +29,19 @@ class sys:
 
     # diagonal form
     def diag(self):  # TODO fix this
-        eigVals, eigVecs = np.linalg.eig(self.A)
-        P = np.empty((np.size(eigVals), 0))  # transformation matrix
-        for eigenVector in eigVecs:
-            P = np.column_stack((P, eigenVector))
-        invP = np.linalg.inv(P)
-        A = np.matmul(invP, np.matmul(self.A, P))
-        B = np.matmul(invP, self.B)
-        C = np.matmul(self.C, P)
-        return A, B, C
+        if np.linalg.det(self.A) != 0:
+            eigVals, eigVecs = np.linalg.eig(self.A)
+            return eigVals, eigVecs
+            # P = np.empty((np.size(eigVals), 0))  # transformation matrix
+            # for eigenVector in eigVecs:
+            #     P = np.column_stack((P, eigenVector))
+            # invP = np.linalg.inv(P)
+            # A = np.matmul(invP, np.matmul(self.A, P))
+            # B = np.matmul(invP, self.B)
+            # C = np.matmul(self.C, P)
+            # return A, B, C
+        else:
+            raise Exception('det(A) == 0, matrix A is not diagonalizable')
 
     # observable canonical form of SISO system
     # highest power of the s in denominator must be bigger than highest power in the numerator
@@ -324,7 +327,7 @@ def pulse(system, plot=False, solver='rk4'):
 # python's pow() function couldn't handle complex numbers and was trying to cast it into something else
 def __imagPow(base, power):
     res = 1
-    for i in range(power - 1):
+    for i in range(power-1):
         res *= base
     return res
 
@@ -332,16 +335,17 @@ def __imagPow(base, power):
 # creates sinusodial transfer function G(jw)
 def __sinTF(system):
     num = []
-    den = [1]
+    den = []
     if isinstance(system, tf):
         for i in range(len(system.TFnumerator)):
             num.append(complex(system.TFnumerator[i], 0))
         for i in range(len(system.TFdenominator)):
             den.append(complex(system.TFdenominator[i], 0))
         for i in range(len(num)):
-            num[i] = num[i] * __imagPow(1j, len(num) - i)
+            t = __imagPow(1j, len(num) - 1 - i)
+            num[i] *= t
         for k in range(len(den)):
-            den[k] = den[k] * __imagPow(1j, len(den) - k)
+            den[k] *= __imagPow(1j, len(den) - 1 - k)
         return num, den
     elif isinstance(system, ss):
         systemTF = ss2tf(system)
@@ -349,26 +353,29 @@ def __sinTF(system):
 
 
 # draws bode diagrams for system
-def bode(system, plot=False):
+def bode(system, maxW=10**3, plot=False):
     n, d = __sinTF(system)
-    num = den = 0
     Gvec = np.array([])
     Phvec = np.array([])
     Wvec = np.array([])
     # calculating the amplitude and phase characteristics
-    for w in np.linspace(0.1, 1000, 20000):
+    for w in np.linspace(0.1, maxW, 10000):
+        num = den = 0
         for i in range(len(n)):
             num += n[i] * pow(w, len(n) - i)
         for k in range(len(d)):
             den += d[k] * pow(w, len(d) - k)
-        G = 20 * log(abs(num / den))
+        print(num)
+        print(den)
+        G = 20 * np.log10(abs(num / den))
         Ph = np.angle((num / den), deg=True)
         Wvec = np.append(Wvec, w)
         Gvec = np.append(Gvec, G)
         Phvec = np.append(Phvec, Ph)
     if plot:
         fig, ax = plt.subplots(2)
-        plt.grid(linestyle='--')
+        ax[0].grid(linestyle='--')
+        ax[1].grid(linestyle='--')
         ax[0].set_title('Bode diagrams')
         ax[0].set_ylabel('Magnitude [dB]')
         ax[0].set_xlabel('ω [rad/s]')
@@ -385,18 +392,18 @@ def bode(system, plot=False):
 
 # draws nyquist plot of system
 # FIXME weird plots (a bit different to matlab/octave)
-def nyquist(system):
+def nyquist(system, maxW=10**4):
     n, d = __sinTF(system)
-    num = den = 0
     Pvec = np.array([])
     Qvec = np.array([])
     Wvec = np.array([])
-    for w in np.linspace(0.1, 1000, 40000):
+    for w in np.linspace(0.01, maxW, 30000):
+        num = den = 0
         for i in range(len(n)):
             num += n[i] * pow(w, len(n) - i)
         for k in range(len(d)):
             den += d[k] * pow(w, len(d) - k)
-        P = abs(num / den)
+        P = (num / den).real
         Q = (num / den).imag
         Wvec = np.append(Wvec, w)
         Pvec = np.append(Pvec, P)

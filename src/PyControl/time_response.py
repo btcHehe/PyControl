@@ -1,5 +1,5 @@
 import numpy as np
-import models as md
+from . import models as md
 
 
 def __setupArrs(system, U, initX=0, time=10, h=0.001, to=0):
