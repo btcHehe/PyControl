@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from . import time_response as tresp
+from . import helpers
 
 
 # TODO:
@@ -214,7 +215,7 @@ def zeros(system):
     if isinstance(system, tf):
         roots = np.roots(system.TFnumerator)
     elif isinstance(system, ss):
-        roots, eigvecs = np.linalg.eig(system.A)
+        pass
     else:
         raise Exception('argument must be tf or ss system')
     return roots
@@ -324,37 +325,11 @@ def pulse(system, plot=False, solver='rk4'):
         raise Exception('argument must be a tf or ss system')
 
 
-# python's pow() function couldn't handle complex numbers and was trying to cast it into something else
-def __imagPow(base, power):
-    res = 1
-    for i in range(power-1):
-        res *= base
-    return res
-
-
-# creates sinusodial transfer function G(jw)
-def __sinTF(system):
-    num = []
-    den = []
-    if isinstance(system, tf):
-        for i in range(len(system.TFnumerator)):
-            num.append(complex(system.TFnumerator[i], 0))
-        for i in range(len(system.TFdenominator)):
-            den.append(complex(system.TFdenominator[i], 0))
-        for i in range(len(num)):
-            t = __imagPow(1j, len(num) - 1 - i)
-            num[i] *= t
-        for k in range(len(den)):
-            den[k] *= __imagPow(1j, len(den) - 1 - k)
-        return num, den
-    elif isinstance(system, ss):
-        systemTF = ss2tf(system)
-        __sinTF(systemTF)
 
 
 # draws bode diagrams for system
 def bode(system, maxW=10**3, plot=False):
-    n, d = __sinTF(system)
+    n, d = helpers.__sinTF(system)
     Gvec = np.array([])
     Phvec = np.array([])
     Wvec = np.array([])
@@ -393,7 +368,7 @@ def bode(system, maxW=10**3, plot=False):
 # draws nyquist plot of system
 # FIXME weird plots (a bit different to matlab/octave)
 def nyquist(system, maxW=10**4):
-    n, d = __sinTF(system)
+    n, d = helpers.__sinTF(system)
     Pvec = np.array([])
     Qvec = np.array([])
     Wvec = np.array([])

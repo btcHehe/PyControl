@@ -1,11 +1,11 @@
 import numpy as np
-from . import models as md
+from . import continous as cont
 
 
 def __setupArrs(system, U, initX=0, time=10, h=0.001, to=0):
     A = B = C = D = np.array([])
-    if isinstance(system, md.tf):
-        systemSS = md.tf2ss(system)
+    if isinstance(system, cont.tf):
+        systemSS = cont.tf2ss(system)
         A = systemSS.A
         B = systemSS.B
         C = systemSS.C
