@@ -7,4 +7,4 @@ pyproject.toml
 setup.cfg
 /src/pyControlToolbox.egg-info
 /src/PyControl/__pycache__
-/tests/test.py
+/tests/
