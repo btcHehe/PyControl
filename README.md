@@ -1,6 +1,6 @@
 # PyControl
 
-Python library for simulating and designing control systems. Available on PyPi under the name [pyControlToolbox](https://pypi.org/project/pyControlToolbox/). The backbone of the library is numpy (for matrix operations) and matplotlib (for plots).
+Python library for simulating and designing control systems. Available on PyPi under the name [pyControlToolbox](https://pypi.org/project/pyControlToolbox/). The backbone of the library is numpy (for matrix operations), sympy (symbolic engine) and matplotlib (for plots).
 > unfortunately pyControl was already taken by project not even related to control systems
 
 ## Functionalities

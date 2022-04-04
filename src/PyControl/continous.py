@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from . import time_response as tresp
 from . import helpers
+from . import symbolic
 
 
 # TODO:
 # -root locus func
 # -nyquist plots
 # -function for model recognition
-# -ss2tf
 # -controlability and observability
 # -L and K matrices
 # -discrete time variants
@@ -114,8 +114,8 @@ class ss(sys):
         self.A = np.array(A)
         tempB = np.array(B)
         self.B = np.reshape(tempB, (np.shape(tempB)[0], 1))
-        self.C = np.array(C)
-        self.D = np.array(D)
+        self.C = np.array([C])
+        self.D = np.array([D])
         if np.size(np.array(stCond)) < np.size(A, axis=0):  # if starting conditions vector is too short
             self.startCond = np.array(stCond)
             for i in range(np.size(A, axis=0) - np.size(self.startCond)):
@@ -193,7 +193,8 @@ def tf2ss(system):
 
 def ss2tf(system):
     if isinstance(system, ss):
-        pass
+        tfsys = symbolic.symss2tf(system.A, system.B, system.C, system.D)
+        return tfsys
     else:
         raise Exception('you need to pass ss system as the argument')
 
@@ -325,10 +326,8 @@ def pulse(system, plot=False, solver='rk4'):
         raise Exception('argument must be a tf or ss system')
 
 
-
-
 # draws bode diagrams for system
-def bode(system, maxW=10**3, plot=False):
+def bode(system, maxW=10 ** 3, plot=False):
     n, d = helpers.__sinTF(system)
     Gvec = np.array([])
     Phvec = np.array([])
@@ -367,7 +366,7 @@ def bode(system, maxW=10**3, plot=False):
 
 # draws nyquist plot of system
 # FIXME weird plots (a bit different to matlab/octave)
-def nyquist(system, maxW=10**4):
+def nyquist(system, maxW=10 ** 4):
     n, d = helpers.__sinTF(system)
     Pvec = np.array([])
     Qvec = np.array([])
