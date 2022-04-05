@@ -9,7 +9,6 @@ from . import symbolic
 # -root locus func
 # -nyquist plots
 # -function for model recognition
-# -controlability and observability
 # -L and K matrices
 # -discrete time variants
 
@@ -42,7 +41,7 @@ class sys:
             # C = np.matmul(self.C, P)
             # return A, B, C
         else:
-            raise Exception('det(A) == 0, matrix A is not diagonalizable')
+            raise Exception('Det(A) == 0, matrix A is not diagonalizable')
 
     # observable canonical form of SISO system
     # highest power of the s in denominator must be bigger than highest power in the numerator
@@ -53,7 +52,7 @@ class sys:
         numCols = np.size(self.TFnumerator)
         denCols = np.size(self.TFdenominator)
         if denCols <= numCols:
-            raise Exception('denominator must be higher order than numerator')
+            raise Exception('Denominator must be higher order than numerator')
         if den[0] != 1:
             div = den[0]
             num = num / div
@@ -83,7 +82,7 @@ class sys:
         numCols = np.size(self.TFnumerator)
         denCols = np.size(self.TFdenominator)
         if numCols >= denCols:
-            raise Exception('denominator must be higher order than numerator')
+            raise Exception('Denominator must be higher order than numerator')
         if den[0] != 1:
             div = den[0]
             num = num / div
@@ -188,7 +187,7 @@ def tf2ss(system):
         systemSS = ss(A, B, C, D)
         return systemSS
     else:
-        raise Exception('you need to pass tf system as the argument')
+        raise Exception('You need to pass tf system as the argument')
 
 
 def ss2tf(system):
@@ -196,7 +195,7 @@ def ss2tf(system):
         tfsys = symbolic.symss2tf(system.A, system.B, system.C, system.D)
         return tfsys
     else:
-        raise Exception('you need to pass ss system as the argument')
+        raise Exception('You need to pass ss system as the argument')
 
 
 # returns array of poles of system
@@ -207,7 +206,7 @@ def poles(system):
     elif isinstance(system, ss):
         roots, eigvecs = np.linalg.eig(system.A)
     else:
-        raise Exception('argument must be tf or ss system')
+        raise Exception('Argument must be tf or ss system')
     return roots
 
 
@@ -218,7 +217,7 @@ def zeros(system):
     elif isinstance(system, ss):
         pass
     else:
-        raise Exception('argument must be tf or ss system')
+        raise Exception('Argument must be tf or ss system')
     return roots
 
 
@@ -252,12 +251,12 @@ def phasePortrait(system, Xinit=None, var1=0, var2=1, t=1):
                     ax.plot(X[var1], X[var2])
                     legendList.append(f'xo={Xinit[i]}')
                 else:
-                    raise Exception("system doesn't have that many state variables. Lower var1 or var2")
+                    raise Exception("System doesn't have that many state variables. Lower var1 or var2")
 
             plt.legend(legendList)
             plt.show()
         else:
-            raise Exception('system needs to be at least 2nd order')
+            raise Exception('System needs to be at least 2nd order')
 
 
 # takes system and returns tuple of vectors (Y,T,X) - response and time vectors and state trajectory matrix
@@ -276,7 +275,7 @@ def step(system, Tpts=None, plot=False, solver='rk4'):
         elif solver == 'rk4':
             Y, T, X = tresp.solveRK4(system, 1)
         else:
-            raise Exception('wrong solver chosen, choose: ee, ie, trap or rk4')
+            raise Exception('Wrong solver chosen, choose: ee, ie, trap or rk4')
         if Tpts is not None:
             Yi = np.interp(Tpts, T, Y)
             Y = Yi
@@ -292,7 +291,7 @@ def step(system, Tpts=None, plot=False, solver='rk4'):
         else:
             return Y, T, X
     else:
-        raise Exception('argument must be a tf or ss system')
+        raise Exception('Argument must be a tf or ss system')
 
 
 # takes system and returns tuple of vectors (Y,T) - response and time vectors
@@ -323,7 +322,7 @@ def pulse(system, plot=False, solver='rk4'):
         else:
             return Y, T, X
     else:
-        raise Exception('argument must be a tf or ss system')
+        raise Exception('Argument must be a tf or ss system')
 
 
 # draws bode diagrams for system
@@ -410,3 +409,50 @@ def rlocus(system, CLtf=tf([1], [1])):
         pass
     else:
         pass
+
+
+def isControllable(system):
+    if isinstance(system, tf):
+        ssSys = tf2ss(system)
+        res = isControllable(ssSys)
+        return res
+    elif isinstance(system, ss):
+        degree = np.shape(system.A)[0]
+        Cmat = np.array([[]])
+        for n in range(degree):
+            item = np.dot(np.linalg.matrix_power(system.A, n), system.B)
+            if n == 0:
+                Cmat = item
+            else:
+                Cmat = np.hstack((Cmat, item))
+        rank = np.linalg.matrix_rank(Cmat)
+        if rank != degree:
+            return False
+        else:
+            return True
+    else:
+        raise Exception('Argument must be a tf or ss system')
+
+
+def isObservable(system):
+    if isinstance(system, tf):
+        ssSys = tf2ss(system)
+        res = isObservable(ssSys)
+        return res
+    elif isinstance(system, ss):
+        degree = np.shape(system.A)[0]
+        Omat = np.array([[]])
+        for n in range(degree):
+            item = np.dot(system.C, np.linalg.matrix_power(system.A, n))
+            if n == 0:
+                Omat = item
+            else:
+                Omat = np.vstack((Omat, item))
+        rank = np.linalg.matrix_rank(Omat)
+        if rank != degree:
+            return False
+        else:
+            return True
+    else:
+        raise Exception('Argument must be a tf or ss system')
+
