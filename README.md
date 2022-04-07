@@ -6,7 +6,7 @@ Python library for simulating and designing control systems. Available on PyPi u
 ## Functionalities
 ### State space and transfer function model declaration
 ```python
-from PyControl.models import *
+from PyControl.continous import *
 numerator = [1, 2, 3]
 denominator = [4, 5, 6, 7]
 tfSystem = tf(numerator, denominator)
@@ -22,7 +22,7 @@ print(ssSystem)
 ```
 ### Step and impulse response simulation
 ```python
-from PyControl.models import *
+from PyControl.continous import *
 
 A = [[-1, 2],
 	[0, -1]]
@@ -35,7 +35,7 @@ step(ssSystem, plot=True)
 **Output:**  
 ![Step response](https://github.com/btcHehe/PyControl/blob/master/img/exmplStep.png "step response")
 ```python
-from PyControl.models import *
+from PyControl.continous import *
 
 A = [[-4, 0],
 	[1.5, -2.1]]
@@ -49,7 +49,7 @@ pulse(ssSystem, plot=True)
 ![Pulse response](https://github.com/btcHehe/PyControl/blob/master/img/exmplPulse.png "pulse response")
 ### Phase portrait plotting
 ```python
-from PyControl.models import *
+from PyControl.continous import *
 
 A = [[-1, 2],
 	[0, -1]]
